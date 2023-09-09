@@ -16,6 +16,7 @@ echo "{ \
   hostname = \"$(hostname -s)\"; \
   user = \"$USER\"; \
   homePath = \"$HOME\"; \
+  hostPlatform = \"$(uname -ms | awk '{gsub("arm64", "aarch64"); print tolower($2) "-" tolower($1)}')\";  \
 }" > darwin-variables.nix \
 && darwin-rebuild switch --flake .
 ```

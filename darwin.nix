@@ -28,7 +28,7 @@ let
     system.stateVersion = 4;
 
     # The platform the configuration will be used on.
-    nixpkgs.hostPlatform = "aarch64-darwin";
+    nixpkgs.hostPlatform = darwinVariables.hostPlatform;
     nixpkgs.config.allowUnfree = true;
 
     users.users.carlosmarques = {
