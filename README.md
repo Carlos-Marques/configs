@@ -10,6 +10,7 @@ Repo for my configs
 # Darwin
 [nix-darwin](https://daiderd.com/nix-darwin/)
 
+## Local install
 ```bash
 echo "{ \
   hostname = \"$(hostname -s)\"; \
@@ -17,4 +18,10 @@ echo "{ \
   homePath = \"$HOME\"; \
 }" > darwin-variables.nix \
 && darwin-rebuild switch --flake .
+```
+
+## Installing directly from git
+```bash
+#⚠️ Warning: This will use the commited darwin-variables.nix instead of your local ones.
+darwin-rebuild switch --flake github:Carlos-Marques/configs
 ```
