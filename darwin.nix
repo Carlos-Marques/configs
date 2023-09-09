@@ -1,4 +1,4 @@
-{ nix-darwin, home-manager, home }:
+{ nix-darwin, home-manager, home, darwinVariables }:
 
 let
   darwinConfiguration = { pkgs, ... }: {
@@ -11,14 +11,17 @@ let
     # nix.package = pkgs.nix;
 
     # Necessary for using flakes on this system.
-    nix.settings.experimental-features = "nix-command flakes";
-    nix.settings.keep-derivations = true;
-    nix.settings.keep-outputs = true;
-    nix.settings.sandbox = false;
+    nix = {
+      settings = {
+        experimental-features = "nix-command flakes";
+        keep-derivations = true;
+        keep-outputs = true;
+        sandbox = false;
+      };
+    };
 
     # Create /etc/zshrc that loads the nix-darwin environment.
     programs.zsh.enable = true;  # default shell on catalina
-    # programs.fish.enable = true;
 
     # Used for backwards compatibility, please read the changelog before changing.
     # $ darwin-rebuild changelog
@@ -29,8 +32,8 @@ let
     nixpkgs.config.allowUnfree = true;
 
     users.users.carlosmarques = {
-      name = "carlosmarques";
-      home = "/Users/carlosmarques";
+      name = darwinVariables.user;
+      home = darwinVariables.homePath;
     };
 
     homebrew = {
@@ -62,8 +65,10 @@ nix-darwin.lib.darwinSystem {
     darwinConfiguration
     home-manager.darwinModules.home-manager
     {
-      home-manager.useGlobalPkgs = true;
-      home-manager.users.carlosmarques = home;
+      home-manager = {
+        useGlobalPkgs = true;
+        users.carlosmarques = home;
+      };
     }
   ];
 }

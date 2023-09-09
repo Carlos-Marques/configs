@@ -17,61 +17,67 @@
   # changes in each release.
   home.stateVersion = "23.11";
 
-  services.syncthing = {
-    enable = true;
-  };
-
-  # Let Home Manager install and manage itself.
-  programs.home-manager.enable = true;
-
-  programs.htop = {
-    enable = true;
-  };
-
-  programs.gh = {
-    enable = true;
-  };
-
-  programs.k9s = {
-    enable = true;
-  };
-
-  programs.vim = {
-    enable = true;
-    defaultEditor = true;
-  };
-
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;
-  };
-
-  programs.starship = {
-    enable = true;
-    settings = {
-      aws.disabled = true;
-      nodejs.disabled = true;
-      rust.disabled = true;
-      nix_shell.disabled = true;
-
-      git_branch.ignore_branches = ["development"];
-
-      env_var.ACTIVE_AWS_PROFILE.format = "aws:[$env_value](red) ";
+  services = {
+    syncthing = {
+      enable = true;
     };
   };
 
-  programs.atuin = {
-    enable = true;
-    settings = {
-      search_mode = "fuzzy";
-      filter_mode = "directory";
-      filter_mode_shell_up_key_binding = "directory";
+  programs = {
+    # Let Home Manager install and manage itself.
+    home-manager = {
+      enable = true;
     };
-  };
 
-  programs.zsh = {
-    enable = true;
-    enableAutosuggestions = true;
-    enableCompletion = true;
+    htop = {
+      enable = true;
+    };
+
+    gh = {
+      enable = true;
+    };
+
+    k9s = {
+      enable = true;
+    };
+
+    vim = {
+      enable = true;
+      defaultEditor = true;
+    };
+
+    direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+    };
+
+    starship = {
+      enable = true;
+      settings = {
+        aws.disabled = true;
+        nodejs.disabled = true;
+        rust.disabled = true;
+        nix_shell.disabled = true;
+
+        git_branch.ignore_branches = ["development"];
+
+        env_var.ACTIVE_AWS_PROFILE.format = "aws:[$env_value](red) ";
+      };
+    };
+
+    atuin = {
+      enable = true;
+      settings = {
+        search_mode = "fuzzy";
+        filter_mode = "directory";
+        filter_mode_shell_up_key_binding = "directory";
+      };
+    };
+
+    zsh = {
+      enable = true;
+      enableAutosuggestions = true;
+      enableCompletion = true;
+    };
   };
 }
