@@ -31,7 +31,7 @@ let
     nixpkgs.hostPlatform = darwinVariables.hostPlatform;
     nixpkgs.config.allowUnfree = true;
 
-    users.users.carlosmarques = {
+    users.users."${darwinVariables.user}" = {
       name = darwinVariables.user;
       home = darwinVariables.homePath;
     };
