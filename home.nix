@@ -5,7 +5,9 @@
   # paths it should manage.
 
   # Packages that should be installed to the user profile.
-  home.packages = [ ];
+  home.packages = [ 
+    pkgs.discord
+  ];
 
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage
@@ -41,9 +43,22 @@
       enable = true;
     };
 
-    vim = {
+    neovim = {
       enable = true;
       defaultEditor = true;
+      extraLuaConfig = ''
+        vim.g.mapleader = " "
+        
+        local org = require('orgmode')
+        org.setup_ts_grammar()
+        org.setup({
+          org_agenda_files = {'~/org/*.org'},
+          org_default_notes_file = '~/org/refile.org',
+        })
+      '';
+      plugins = with pkgs.vimPlugins; [
+        orgmode
+      ];
     };
 
     direnv = {
