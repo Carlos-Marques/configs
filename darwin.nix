@@ -56,6 +56,7 @@ let
         "obsidian"
         "mqtt-explorer"
         "netbirdio/tap/netbird-ui"
+        "scoot"
       ];
     };
   };
