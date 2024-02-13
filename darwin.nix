@@ -30,6 +30,10 @@ let
     # The platform the configuration will be used on.
     nixpkgs.hostPlatform = darwinVariables.hostPlatform;
     nixpkgs.config.allowUnfree = true;
+    
+    networking = {
+      dns = [ "1.1.1.1" "1.0.0.1" ];
+    };
 
     users.users."${darwinVariables.user}" = {
       name = darwinVariables.user;
