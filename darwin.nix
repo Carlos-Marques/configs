@@ -49,6 +49,7 @@ let
       };
       brews = [
         "openssl"
+        "netbirdio/tap/netbird"
       ];
       casks = [
         "cursor"
