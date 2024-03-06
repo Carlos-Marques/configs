@@ -5,8 +5,9 @@
   # paths it should manage.
 
   # Packages that should be installed to the user profile.
-  home.packages = [ 
+  home.packages = [
     pkgs.discord
+    pkgs.rnix-lsp
   ];
 
   # This value determines the Home Manager release that your
@@ -63,7 +64,13 @@
 
     direnv = {
       enable = true;
-      nix-direnv.enable = true;
+      config = {
+        hide_env_diff = true;
+      };
+
+      nix-direnv = {
+        enable = true;
+      };
     };
 
     starship = {
@@ -74,7 +81,7 @@
         rust.disabled = true;
         nix_shell.disabled = true;
 
-        git_branch.ignore_branches = ["development"];
+        git_branch.ignore_branches = [ "development" ];
 
         env_var.ACTIVE_AWS_PROFILE.format = "aws:[$env_value](red) ";
       };
