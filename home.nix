@@ -113,6 +113,7 @@
       enable = true;
       enableAutosuggestions = true;
       enableCompletion = true;
+      defaultKeymap = "viins";
     };
   };
 }
