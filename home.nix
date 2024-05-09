@@ -56,8 +56,21 @@
           org_agenda_files = {'~/org/*.org'},
           org_default_notes_file = '~/org/refile.org',
         })
+        
+        local nvim_treesitter = require('nvim-treesitter.configs')
+        nvim_treesitter.setup({
+          highlight = {
+            enable = true,
+            additional_vim_regex_highlighting = false,
+          }
+        })
+        
+        local wk = require("which-key")
+        wk.setup({})
       '';
       plugins = with pkgs.vimPlugins; [
+        which-key-nvim
+        nvim-treesitter.withAllGrammars
         orgmode
       ];
     };
