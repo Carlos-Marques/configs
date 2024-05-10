@@ -49,6 +49,9 @@
       defaultEditor = true;
       extraLuaConfig = ''
         vim.g.mapleader = " "
+
+        vim.opt.conceallevel = 2
+        vim.opt.concealcursor = 'nc'
         
         local org = require('orgmode')
         org.setup_ts_grammar()
