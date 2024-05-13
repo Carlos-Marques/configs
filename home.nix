@@ -53,6 +53,16 @@
         vim.opt.conceallevel = 2
         vim.opt.concealcursor = 'nc'
         
+        vim.opt.wrap = false
+
+        local nvim_treesitter = require('nvim-treesitter.configs')
+        nvim_treesitter.setup({
+          highlight = {
+            enable = true,
+            additional_vim_regex_highlighting = { 'org' },
+          },
+        })
+
         local org = require('orgmode')
         org.setup_ts_grammar()
         org.setup({
@@ -60,21 +70,14 @@
           org_default_notes_file = '~/org/refile.org',
         })
         
-        local nvim_treesitter = require('nvim-treesitter.configs')
-        nvim_treesitter.setup({
-          highlight = {
-            enable = true,
-            additional_vim_regex_highlighting = false,
-          }
-        })
         
         local wk = require("which-key")
         wk.setup({})
       '';
       plugins = with pkgs.vimPlugins; [
-        which-key-nvim
-        nvim-treesitter.withAllGrammars
+        nvim-treesitter
         orgmode
+        which-key-nvim
       ];
     };
 
