@@ -6,9 +6,20 @@
 
   # Packages that should be installed to the user profile.
   home.packages = [
+    pkgs.remmina
     pkgs.discord
-    pkgs.rnix-lsp
+    pkgs.obsidian
+    pkgs.jq
+    pkgs.nil
+    pkgs.nixpkgs-fmt
+    pkgs.zig
+    (pkgs.writeShellScriptBin "new-project" (builtins.readFile ./scripts/new-project/new-project.sh))
   ];
+
+  home.file = {
+    ".local/share/new-project/flake.nix".source = ./scripts/new-project/flake.nix;
+    ".local/share/new-project/.envrc".source = ./scripts/new-project/.envrc;
+  };
 
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage
@@ -55,16 +66,7 @@
         
         vim.opt.wrap = false
 
-        local nvim_treesitter = require('nvim-treesitter.configs')
-        nvim_treesitter.setup({
-          highlight = {
-            enable = true,
-            additional_vim_regex_highlighting = { 'org' },
-          },
-        })
-
         local org = require('orgmode')
-        org.setup_ts_grammar()
         org.setup({
           org_agenda_files = {'~/org/*.org'},
           org_default_notes_file = '~/org/refile.org',
@@ -75,7 +77,6 @@
         wk.setup({})
       '';
       plugins = with pkgs.vimPlugins; [
-        nvim-treesitter
         orgmode
         which-key-nvim
       ];
@@ -117,9 +118,16 @@
 
     zsh = {
       enable = true;
-      enableAutosuggestions = true;
+      autosuggestion.enable = true;
       enableCompletion = true;
       defaultKeymap = "viins";
+    };
+
+    git = {
+      enable = true;
+      lfs = {
+        enable = true;
+      };
     };
   };
 }

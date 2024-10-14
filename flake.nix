@@ -16,19 +16,19 @@
   };
 
   outputs = inputs@{ self, nix-darwin, nixpkgs, home-manager }:
-  let
-    darwinVariables = import ./darwin-variables.nix;
+    let
+      darwinVariables = import ./darwin-variables.nix;
 
-    home = import ./home.nix;
+      home = import ./home.nix;
 
-    darwinSystem = import ./darwin.nix { 
-      inherit nix-darwin home-manager home darwinVariables;
+      darwinSystem = import ./darwin.nix {
+        inherit nix-darwin home-manager home darwinVariables;
+      };
+    in
+    {
+      darwinConfigurations."${darwinVariables.hostname}" = darwinSystem;
+
+      # Expose the package set, including overlays, for convenience.
+      darwinPackages = self.darwinConfigurations."${darwinVariables.hostname}".pkgs;
     };
-  in
-  {
-    darwinConfigurations."${darwinVariables.hostname}" = darwinSystem;
-
-    # Expose the package set, including overlays, for convenience.
-    darwinPackages = self.darwinConfigurations."${darwinVariables.hostname}".pkgs;
-  };
 }
