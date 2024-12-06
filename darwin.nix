@@ -122,13 +122,38 @@ let
       keyboard = {
         enableKeyMapping = true;
       };
+      defaults = {
+        NSGlobalDomain = {
+          ApplePressAndHoldEnabled = false;
+        };
+        trackpad = {
+          Clicking = true;
+        };
+        magicmouse.MouseButtonMode = "TwoButton";
+        dock = {
+          autohide = true;
+          mru-spaces = false;
+          orientation = "left";
+          show-recents = false;
+          tilesize = 36;
+          persistent-apps = [];
+          persistent-others = [];
+          wvous-bl-corner = 1;
+          wvous-br-corner = 1;
+          wvous-tl-corner = 1;
+          wvous-tr-corner = 1;
+        };
+      };
     };
+    
+    time.timeZone = "Europe/Lisbon";
 
     # The platform the configuration will be used on.
     nixpkgs.hostPlatform = darwinVariables.hostPlatform;
     nixpkgs.config.allowUnfree = true;
 
     networking = {
+      knownNetworkServices = [ "Wi-Fi" "Ethernet" ];
       dns = [ "1.1.1.1" "1.0.0.1" ];
     };
 
@@ -146,6 +171,7 @@ let
       };
       taps = [
         "depot/tap"
+        "netbirdio/tap"
       ];
       brews = [
         "openssl"

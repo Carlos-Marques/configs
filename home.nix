@@ -125,9 +125,20 @@
 
     git = {
       enable = true;
+      userName = "Carlos Marques";
+      userEmail = "carlosmarques.personal@gmail.com";
       lfs = {
         enable = true;
       };
+      extraConfig = {
+        push = {
+          autoSetupRemote = true;
+        };
+      };
+    };
+    
+    nnn = {
+      enable = true;
     };
   };
 }
