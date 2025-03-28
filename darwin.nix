@@ -171,6 +171,7 @@ let
         "depot/tap/depot"
       ];
       casks = [
+        "keepassxc"
         "1password"
         "chatgpt"
         "tableplus"
