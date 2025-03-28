@@ -8,10 +8,6 @@ let
 
     # Auto upgrade nix package and the daemon service.
     services = {
-      nix-daemon = {
-        enable = true;
-      };
-
       # yabai = {
       #   enable = true;
       #   enableScriptingAddition = true;
@@ -75,26 +71,26 @@ let
 
           # Focus window right
           ctrl - l : yabai -m window --focus east
-          
+
           # create desktop, move window and follow focus - uses jq for parsing json
           shift + ctrl - n : yabai -m space --create && \
             index="$$(yabai -m query --spaces --display | jq 'map(select(."is-native-fullscreen" == false))[-1].index')" && \
-            yabai -m window --space "$${index}" && \
-            yabai -m space --focus "$${index}"
+            yabai -m window --space "$''${index}" && \
+            yabai -m space --focus "$''${index}"
             
           # destroy desktop
           shift + ctrl - d : yabai -m space --destroy
-          
+
           # focus desktop
           ctrl - 1 : yabai -m space --focus 1
           ctrl - 2 : yabai -m space --focus 2
           ctrl - 3 : yabai -m space --focus 3
-          
+
           # move window to desktop and focus
           shift + ctrl - 1 : yabai -m window --space 1; yabai -m space --focus 1
           shift + ctrl - 2 : yabai -m window --space 2; yabai -m space --focus 2
           shift + ctrl - 3 : yabai -m window --space 3; yabai -m space --focus 3
-          
+
           # toggle fullscreen
           ctrl - f : yabai -m window --toggle zoom-fullscreen
         '';
@@ -115,20 +111,16 @@ let
     # Create /etc/zshrc that loads the nix-darwin environment.
     programs.zsh.enable = true; # default shell on catalina
 
+    security.pam.services.sudo_local.touchIdAuth = true;
+
     # Used for backwards compatibility, please read the changelog before changing.
     # $ darwin-rebuild changelog
     system = {
       stateVersion = 4;
-      keyboard = {
-        enableKeyMapping = true;
-      };
+      keyboard = { enableKeyMapping = true; };
       defaults = {
-        NSGlobalDomain = {
-          ApplePressAndHoldEnabled = false;
-        };
-        trackpad = {
-          Clicking = true;
-        };
+        NSGlobalDomain = { ApplePressAndHoldEnabled = false; };
+        trackpad = { Clicking = true; };
         magicmouse.MouseButtonMode = "TwoButton";
         dock = {
           autohide = true;
@@ -136,8 +128,8 @@ let
           orientation = "left";
           show-recents = false;
           tilesize = 36;
-          persistent-apps = [];
-          persistent-others = [];
+          persistent-apps = [ ];
+          persistent-others = [ ];
           wvous-bl-corner = 1;
           wvous-br-corner = 1;
           wvous-tl-corner = 1;
@@ -145,7 +137,7 @@ let
         };
       };
     };
-    
+
     time.timeZone = "Europe/Lisbon";
 
     # The platform the configuration will be used on.
@@ -179,6 +171,7 @@ let
         "depot/tap/depot"
       ];
       casks = [
+        "1password"
         "chatgpt"
         "tableplus"
         "cursor"
@@ -193,6 +186,8 @@ let
         "scoot"
       ];
     };
+
+    ids.gids.nixbld = 350;
   };
 in
 nix-darwin.lib.darwinSystem {

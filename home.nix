@@ -5,15 +5,16 @@
   # paths it should manage.
 
   # Packages that should be installed to the user profile.
-  home.packages = [
-    pkgs.remmina
-    pkgs.discord
-    pkgs.obsidian
-    pkgs.jq
-    pkgs.nil
-    pkgs.nixpkgs-fmt
-    pkgs.zig
-    (pkgs.writeShellScriptBin "new-project" (builtins.readFile ./scripts/new-project/new-project.sh))
+  home.packages = with pkgs; [
+    remmina
+    discord
+    obsidian
+    jq
+    nil
+    nixpkgs-fmt
+    magic-wormhole
+    awscli2
+    (writeShellScriptBin "new-project" (builtins.readFile ./scripts/new-project/new-project.sh))
   ];
 
   home.file = {
@@ -136,7 +137,7 @@
         };
       };
     };
-    
+
     nnn = {
       enable = true;
     };
