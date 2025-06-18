@@ -100,11 +100,17 @@ let
 
     # Necessary for using flakes on this system.
     nix = {
+      linux-builder = {
+        enable = true;
+        systems = [ "x86_64-linux" "aarch64-linux" ];
+        config.boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+      };
       settings = {
         experimental-features = "nix-command flakes";
         keep-derivations = true;
         keep-outputs = true;
         sandbox = false;
+        trusted-users = [ "root" "carlosmarques" ];
       };
     };
 
@@ -116,6 +122,7 @@ let
     # Used for backwards compatibility, please read the changelog before changing.
     # $ darwin-rebuild changelog
     system = {
+      primaryUser = "carlosmarques";
       stateVersion = 4;
       keyboard = { enableKeyMapping = true; };
       defaults = {
@@ -138,7 +145,7 @@ let
       };
     };
 
-    time.timeZone = "Europe/Lisbon";
+    time.timeZone = "America/Los_Angeles";
 
     # The platform the configuration will be used on.
     nixpkgs.hostPlatform = darwinVariables.hostPlatform;
@@ -164,13 +171,19 @@ let
       taps = [
         "depot/tap"
         "netbirdio/tap"
+        "flyteorg/homebrew-tap"
+        "nikitabobko/tap"
+        "peak/tap"
       ];
       brews = [
         "openssl"
         "netbirdio/tap/netbird"
         "depot/tap/depot"
+        "flyteorg/homebrew-tap/flytectl"
+        "peak/tap/s5cmd"
       ];
       casks = [
+        "nikitabobko/tap/aerospace"
         "keepassxc"
         "1password"
         "chatgpt"

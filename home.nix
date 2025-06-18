@@ -98,6 +98,7 @@
       enable = true;
       settings = {
         aws.disabled = true;
+        gcloud.disabled = true;
         nodejs.disabled = true;
         rust.disabled = true;
         nix_shell.disabled = true;
