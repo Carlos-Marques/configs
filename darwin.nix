@@ -99,20 +99,20 @@ let
     # nix.package = pkgs.nix;
 
     # Necessary for using flakes on this system.
-    nix = {
-      linux-builder = {
-        enable = true;
-        systems = [ "x86_64-linux" "aarch64-linux" ];
-        config.boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
-      };
-      settings = {
-        experimental-features = "nix-command flakes";
-        keep-derivations = true;
-        keep-outputs = true;
-        sandbox = false;
-        trusted-users = [ "root" "carlosmarques" ];
-      };
-    };
+    # nix = {
+    #   linux-builder = {
+    #     enable = true;
+    #     systems = [ "x86_64-linux" "aarch64-linux" ];
+    #     config.boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+    #   };
+    #   settings = {
+    #     experimental-features = "nix-command flakes";
+    #     keep-derivations = true;
+    #     keep-outputs = true;
+    #     sandbox = false;
+    #     trusted-users = [ "root" "carlosmarques" ];
+    #   };
+    # };
 
     # Create /etc/zshrc that loads the nix-darwin environment.
     programs.zsh.enable = true; # default shell on catalina
