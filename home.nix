@@ -1,12 +1,29 @@
 { config, pkgs, ... }:
 
 {
+  nix = {
+    enable = true;
+
+    settings = {
+      # what cachix use wrote to nix.conf
+      extra-substituters = [
+        "https://monorepo.cachix.org"
+      ];
+
+      extra-trusted-public-keys = [
+        "monorepo.cachix.org-1:xI4avJXNAOTcGcUdqG1FXRwpo5JrHCnoTsA2qzunTKI="
+      ];
+
+      # point Nix at your per-user netrc
+      netrc-file = "${config.home.homeDirectory}/.config/nix/netrc";
+    };
+  };
+
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
 
   # Packages that should be installed to the user profile.
   home.packages = with pkgs; [
-    remmina
     discord
     obsidian
     jq
@@ -14,6 +31,10 @@
     nixpkgs-fmt
     magic-wormhole
     awscli2
+    wget
+    kubectl
+    comma
+    cachix
     (writeShellScriptBin "new-project" (builtins.readFile ./scripts/new-project/new-project.sh))
   ];
 
@@ -42,6 +63,11 @@
     # Let Home Manager install and manage itself.
     home-manager = {
       enable = true;
+    };
+
+    nix-index = {
+      enable = true;
+      enableZshIntegration = true;
     };
 
     htop = {
@@ -102,10 +128,10 @@
         nodejs.disabled = true;
         rust.disabled = true;
         nix_shell.disabled = true;
-
-        git_branch.ignore_branches = [ "development" ];
-
-        env_var.ACTIVE_AWS_PROFILE.format = "aws:[$env_value](red) ";
+        kubernetes = {
+          disabled = false;
+          detect_extensions = [ "yaml" "yml" "tf" ];
+        };
       };
     };
 
@@ -135,6 +161,9 @@
       extraConfig = {
         push = {
           autoSetupRemote = true;
+        };
+        commit = {
+          verbose = true;
         };
       };
     };
