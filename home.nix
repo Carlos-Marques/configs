@@ -8,10 +8,12 @@
       # what cachix use wrote to nix.conf
       extra-substituters = [
         "https://monorepo.cachix.org"
+        "https://nix-community.cachix.org"
       ];
 
       extra-trusted-public-keys = [
         "monorepo.cachix.org-1:xI4avJXNAOTcGcUdqG1FXRwpo5JrHCnoTsA2qzunTKI="
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       ];
 
       # point Nix at your per-user netrc
@@ -90,7 +92,7 @@
 
         vim.opt.conceallevel = 2
         vim.opt.concealcursor = 'nc'
-        
+
         vim.opt.wrap = false
 
         local org = require('orgmode')
@@ -98,8 +100,8 @@
           org_agenda_files = {'~/org/*.org'},
           org_default_notes_file = '~/org/refile.org',
         })
-        
-        
+
+
         local wk = require("which-key")
         wk.setup({})
       '';
@@ -130,7 +132,11 @@
         nix_shell.disabled = true;
         kubernetes = {
           disabled = false;
-          detect_extensions = [ "yaml" "yml" "tf" ];
+          detect_extensions = [
+            "yaml"
+            "yml"
+            "tf"
+          ];
         };
       };
     };

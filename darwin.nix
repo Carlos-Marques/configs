@@ -7,7 +7,7 @@
 
 let
   darwinConfiguration =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
       # List packages installed in system profile. To search by name, run:
       # $ nix-env -qaP | grep wget
@@ -88,7 +88,12 @@ let
             "x86_64-linux"
             "aarch64-linux"
           ];
-          config.boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+          maxJobs = 4;
+          config = {
+            boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+            # Use QEMU's NAT DNS proxy - 10.0.2.3 forwards to host's DNS
+            networking.nameservers = [ "10.0.2.3" ];
+          };
         };
       };
 
