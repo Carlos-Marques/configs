@@ -155,6 +155,14 @@
       autosuggestion.enable = true;
       enableCompletion = true;
       defaultKeymap = "viins";
+      history = {
+        size = 10000000;
+        save = 10000000;
+        extended = true;
+        ignoreDups = true;
+        ignoreSpace = true;
+        share = true;
+      };
     };
 
     git = {
