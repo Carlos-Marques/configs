@@ -1,0 +1,11 @@
+{
+  "$schema": "https://api.thecompany.company/schemas/v1/environment.json",
+  "scripts": {
+    "install": {
+      "command": "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --no-confirm"
+    }
+  },
+  "env": {
+    "PATH": "/nix/var/nix/profiles/default/bin:/home/user/.nix-profile/bin:/home/user/.bun/bin:/home/user/.cargo/bin:/home/user/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+  }
+}
