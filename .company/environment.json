@@ -2,10 +2,7 @@
   "$schema": "https://api.thecompany.company/schemas/v1/environment.json",
   "scripts": {
     "install": {
-      "command": "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install linux --no-confirm"
+      "command": "curl --proto '=https' --tlsv1.2 -sSf -L -o /tmp/nix-installer \"https://install.determinate.systems/nix/tag/v3.22.3/nix-installer-$(uname -m)-linux\" && chmod +x /tmp/nix-installer && /tmp/nix-installer install linux --no-confirm && rm -f /tmp/nix-installer && sudo ln -sf /nix/var/nix/profiles/default/bin/* /usr/local/bin/"
     }
-  },
-  "env": {
-    "PATH": "/nix/var/nix/profiles/default/bin:/home/user/.nix-profile/bin:/home/user/.bun/bin:/home/user/.cargo/bin:/home/user/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   }
 }
