@@ -5,7 +5,7 @@
       "command": "curl --proto '=https' --tlsv1.2 -sSf -L -o /tmp/nix-installer \"https://install.determinate.systems/nix/tag/v3.22.3/nix-installer-$(uname -m)-linux\" && chmod +x /tmp/nix-installer && /tmp/nix-installer install linux --no-confirm && rm -f /tmp/nix-installer && sudo ln -sf /nix/var/nix/profiles/default/bin/* /usr/local/bin/"
     },
     "prepare": {
-      "command": "sudo ln -sf /home/user/.nix-profile/bin/* /usr/local/bin/ 2>/dev/null || true"
+      "command": "if [ -d /home/user/.nix-profile/bin ]; then for f in /home/user/.nix-profile/bin/*; do if [ -e \"$f\" ] && [ ! -e \"/usr/local/bin/$(basename \"$f\")\" ]; then sudo ln -s \"$f\" /usr/local/bin/; fi; done; fi"
     }
   }
 }
