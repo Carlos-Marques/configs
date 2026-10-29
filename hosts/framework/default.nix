@@ -3,6 +3,7 @@
   pkgs,
   user,
   nixos-hardware,
+  nixpkgs-master,
   ...
 }:
 
@@ -127,6 +128,9 @@ in
   # `sudo netbird up`; the client remembers the login.
   services.netbird = {
     enable = true;
+    # Match the Mac, whose Homebrew tap ships releases the same day. 0.82.0 is
+    # on nixpkgs master only; go back to pkgs.netbird once nixos-unstable has it.
+    package = nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.netbird;
     # NetBird's own SSH server (Google login per session), so SSH is only
     # reachable through the mesh. Peers connect with plain `ssh`, which NetBird
     # redirects from 22 to 22022.

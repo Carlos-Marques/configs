@@ -107,6 +107,22 @@
         "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
       }
     },
+    "nixpkgs-master": {
+      "locked": {
+        "lastModified": 1793312659,
+        "narHash": "sha256-L3Zrhg6gzykyZnKxSeORmlfuQZWqIG7vU5UeOAGu8Ec=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "bb409c4e9751863ec33d9059b5421a055caa6ee4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "master",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1792506237,
@@ -130,7 +146,8 @@
         "nix-darwin": "nix-darwin",
         "nixos": "nixos",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_2",
+        "nixpkgs-master": "nixpkgs-master"
       }
     }
   },

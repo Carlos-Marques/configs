@@ -6,6 +6,9 @@
     # NixOS hosts track the channel gated on NixOS tests; nixpkgs-unstable only
     # gates on package builds, which is fine for macOS but not for a whole OS.
     nixos.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Single packages that can't wait for a channel bump (see hosts/); drop
+    # once nixos-unstable catches up.
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
 
     nix-darwin = {
       url = "github:LnL7/nix-darwin";
@@ -29,6 +32,7 @@
     {
       nixpkgs,
       nixos,
+      nixpkgs-master,
       nix-darwin,
       home-manager,
       nixos-hardware,
@@ -70,7 +74,7 @@
       };
 
       nixosConfigurations.framework-machine-broke = nixos.lib.nixosSystem {
-        specialArgs = { inherit user nixos-hardware; };
+        specialArgs = { inherit user nixos-hardware nixpkgs-master; };
         modules = [
           ./hosts/framework
           disko.nixosModules.disko
