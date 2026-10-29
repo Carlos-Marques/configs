@@ -123,6 +123,17 @@ in
     };
   };
 
+  # Personal NetBird mesh (NetBird Cloud). Log in once with
+  # `sudo netbird up`; the client remembers the login.
+  services.netbird = {
+    enable = true;
+    # NetBird's own SSH server (Google login per session), so SSH is only
+    # reachable through the mesh. Peers connect with plain `ssh`, which NetBird
+    # redirects from 22 to 22022.
+    clients.default.config.ServerSSHAllowed = true;
+  };
+  networking.firewall.interfaces.wt0.allowedTCPPorts = [ 22022 ];
+
   # Key-only SSH; the password is for the console, sudo and the lock screen.
   services.openssh = {
     enable = true;
