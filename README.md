@@ -51,19 +51,28 @@ Update inputs with `nix flake update`. Format with `nix fmt`.
    [channels.nixos.org](https://channels.nixos.org/), check it against the
    `.sha256` beside it, then on a Mac
    `sudo dd if=nixos.iso of=/dev/rdiskN bs=4m` (`diskutil list` for N).
-3. Boot it (F12 → the USB stick). Get online with `nmtui`, set a password for
-   the `nixos` user with `passwd` so the install can be driven over SSH, and
-   note the address from `ip -4 a`.
+3. Boot it (F12 → the USB stick). Get online with `nmtui` (networks that
+   isolate clients, like the office Wi-Fi, block SSH between machines; a phone
+   hotspot works), authorize the SSH key with
+   `mkdir -p ~/.ssh && curl -sL https://github.com/Carlos-Marques.keys >> ~/.ssh/authorized_keys`
+   so the install can be driven over SSH, and note the address from `ip -4 a`.
 4. Pick the mainboard module: `lscpu | grep 'Model name'`, then set
    `mainboard` in `hosts/framework/default.nix` (the table there maps CPU to
    module).
 5. Replace the placeholder hardware config:
    `nixos-generate-config --no-filesystems --show-hardware-config > hosts/framework/hardware-configuration.nix`.
 6. Check the disk is `/dev/nvme0n1` (`lsblk`; else edit `disko.nix`), then
-   partition, encrypt and mount it (prompts for the disk passphrase, wipes the disk):
-   `sudo nix --experimental-features 'nix-command flakes' run github:nix-community/disko -- --mode destroy,format,mount --flake .#framework-machine-broke`
-7. `sudo nixos-install --flake .#framework-machine-broke`, then set the user's
-   password: `sudo nixos-enter -c 'passwd carlosmarques'`. Reboot.
+   partition, encrypt and mount it (wipes the disk). disko reads the disk
+   passphrase from `/tmp/secret.key`; write it on the laptop's console with
+   `read -rs p && printf %s "$p" | sudo tee /tmp/secret.key >/dev/null`, then:
+   `sudo nix --experimental-features 'nix-command flakes' run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#framework-machine-broke`
+7. `sudo nixos-install --flake .#framework-machine-broke --no-root-passwd`,
+   then set the user's password on the console:
+   `sudo nixos-enter -c 'passwd carlosmarques'`. **Don't skip this**: the
+   account starts locked, and sudo and `fprintd-enroll` both need the password,
+   so without it the only way back in is booting the USB stick, opening LUKS,
+   mounting the `/root` and `/nix` subvolumes and running the same command.
+   Delete `/tmp/secret.key`, reboot.
 8. After the first login: `fprintd-enroll` for the fingerprint reader, copy
    the KeePassXC key file over (see Passwords), and accept the new device in
    Syncthing on another peer, then add its ID to `home/default.nix`.
