@@ -15,7 +15,7 @@ let
   #   Intel 13th Gen                     -> framework-13th-gen-intel
   #   Intel Core Ultra (Series 1, 1xxH)  -> framework-intel-core-ultra-series1
   #   Intel Core Ultra (Series 3, 3xx)   -> framework-intel-core-ultra-series3
-  mainboard = "framework-13-7040-amd";
+  mainboard = "framework-amd-ai-300-series";
 in
 {
   imports = [
@@ -115,6 +115,16 @@ in
     settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland-uwsm.desktop'";
   };
 
+  # Key-only SSH; the password is for the console, sudo and the lock screen.
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
+
   # Mutable users: set the password with `passwd` during the install rather
   # than committing a hash to a public repo.
   users.users.${user} = {
@@ -125,6 +135,10 @@ in
       "video"
     ];
     shell = pkgs.zsh;
+    # Same key as github.com/Carlos-Marques.keys (held in 1Password).
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICcullPbqhb88CocW8eYZOG3WUtbRC7q14CED/3DUNO/"
+    ];
   };
 
   # Read the release notes before changing: it pins stateful defaults.
