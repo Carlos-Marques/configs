@@ -26,8 +26,10 @@
           content = {
             type = "luks";
             name = "cryptroot";
-            # No passwordFile: disko prompts for the passphrase at install time,
-            # so it never touches the repo or the Nix store.
+            # Only read when formatting, so the passphrase never touches the
+            # repo or the Nix store: write it on the installer with
+            # `read -rs p; printf %s "$p" > /tmp/secret.key`. Boot asks for it.
+            passwordFile = "/tmp/secret.key";
             settings.allowDiscards = true;
             content = {
               type = "btrfs";

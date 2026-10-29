@@ -112,7 +112,15 @@ in
 
   services.greetd = {
     enable = true;
-    settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland-uwsm.desktop'";
+    settings = {
+      default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland-uwsm.desktop'";
+      # Log straight in on boot: the LUKS passphrase already gates the machine.
+      # Logging out falls back to tuigreet.
+      initial_session = {
+        command = "uwsm start hyprland-uwsm.desktop";
+        inherit user;
+      };
+    };
   };
 
   # Key-only SSH; the password is for the console, sudo and the lock screen.
