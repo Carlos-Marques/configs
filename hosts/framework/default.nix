@@ -109,7 +109,8 @@ in
   # from programs.hyprland below.
   environment.systemPackages = with pkgs; [
     brave
-    keepassxc
+    # 2.8 for fingerprint Quick Unlock; see the file.
+    (callPackage ./keepassxc.nix { })
     # Secure Boot keys and status (see boot.lanzaboote).
     sbctl
   ];
