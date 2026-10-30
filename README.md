@@ -103,10 +103,12 @@ the laptop:
    Frameworks it's buggy, and it drops the revocation list (dbx). F10.
 3. `sudo sbctl enroll-keys --microsoft --firmware-builtin` (Microsoft keys for
    option ROMs, Framework's own keys for its firmware updates).
-4. F2 again: turn Secure Boot enforcement on, and set a **Supervisor
-   password** (Security tab) so nobody can turn Secure Boot off. It's asked
-   for only when entering setup, not at boot. F10. Check with
-   `bootctl status` (Secure Boot: enabled (user)).
+4. F2 again (or `systemctl reboot --firmware-setup`): Setup Utility →
+   Security → **Set Supervisor Password** so nobody can turn Secure Boot off
+   (asked only when entering setup, not at boot; not the power-on password).
+   Saving it reboots straight away, so go back in for Administer Secure Boot
+   → **Enforce Secure Boot** → Enabled. F10. Check with `bootctl status`
+   (Secure Boot: enabled (user)).
 5. Seal the disk key to Secure Boot (PCR 7) and an empty PCR 15 (see the
    comment in `hosts/framework/default.nix`), and make a recovery key; store
    it in KeePass:
