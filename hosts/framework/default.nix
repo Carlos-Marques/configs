@@ -43,14 +43,30 @@ in
   };
 
   boot = {
-    loader = {
-      systemd-boot = {
-        enable = true;
-        # Keep the ESP from filling up with old kernels.
-        configurationLimit = 20;
-      };
-      efi.canTouchEfiVariables = true;
+    # Secure Boot: lanzaboote installs systemd-boot itself and signs it and
+    # every generation (kernel, initrd and command line in one image) with the
+    # keys in /var/lib/sbctl. Setup steps: README.md.
+    loader.efi.canTouchEfiVariables = true;
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/var/lib/sbctl";
+      # Keep the ESP from filling up with old kernels.
+      configurationLimit = 20;
+      # No editing the kernel command line from the boot menu.
+      settings.editor = false;
     };
+
+    # The TPM unlocks the disk, sealed to PCR 7 (Secure Boot on, with our
+    # keys) and to PCR 15 still being empty; the passphrase stays enrolled as
+    # the fallback. Enrolled once with systemd-cryptenroll (README.md).
+    # tpm2-measure-pcr extends PCR 15 whenever a volume is unlocked, so the
+    # TPM releases the key at most once per boot: code started from a
+    # swapped-in fake root volume can't ask for it again.
+    initrd.luks.devices.cryptroot.crypttabExtraOpts = [
+      "tpm2-device=auto"
+      "tpm2-measure-pcr=yes"
+    ];
+
     # Newest kernel: Framework hardware support lands upstream continuously.
     kernelPackages = pkgs.linuxPackages_latest;
   };
@@ -81,6 +97,8 @@ in
   environment.systemPackages = with pkgs; [
     brave
     keepassxc
+    # Secure Boot keys and status (see boot.lanzaboote).
+    sbctl
   ];
 
   # Chromium-family policy, same as the Mac's CustomUserPreferences: Brave reads
@@ -111,17 +129,11 @@ in
     hyprlock.enable = true;
   };
 
+  # No autologin: the TPM unlocks the disk without a prompt, so the greeter
+  # (fingerprint or password) is what gates the machine.
   services.greetd = {
     enable = true;
-    settings = {
-      default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland-uwsm.desktop'";
-      # Log straight in on boot: the LUKS passphrase already gates the machine.
-      # Logging out falls back to tuigreet.
-      initial_session = {
-        command = "uwsm start hyprland-uwsm.desktop";
-        inherit user;
-      };
-    };
+    settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland-uwsm.desktop'";
   };
 
   # Personal NetBird mesh (NetBird Cloud). Log in once with

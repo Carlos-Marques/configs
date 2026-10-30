@@ -45,7 +45,8 @@ Update inputs with `nix flake update`. Format with `nix fmt`.
 ## Fresh Framework
 
 1. BIOS (F2 at power-on): Security → Secure Boot → disable enforcement. The
-   NixOS installer isn't signed for Secure Boot.
+   NixOS installer isn't signed for Secure Boot. It's turned back on with
+   your own keys after the install (see below).
 2. Write the minimal installer to a USB stick: download
    `latest-nixos-minimal-x86_64-linux.iso` from
    [channels.nixos.org](https://channels.nixos.org/), check it against the
@@ -81,6 +82,44 @@ Hyprland uses the same keys as AeroSpace on the Mac, with Alt as the modifier.
 Super takes the Mac's Cmd shortcuts: Super+Return terminal, Super+Space
 launcher, Super+Q close, Super+Ctrl+Q lock, Super+Shift+4/3 screenshot,
 Super+Shift+Escape log out.
+
+## Framework Secure Boot and TPM unlock
+
+[Lanzaboote](https://github.com/nix-community/lanzaboote) signs the boot chain
+with your own keys, and the TPM unlocks the disk at boot with no prompt as long
+as Secure Boot is on with those keys. The greeter (fingerprint or password) is
+the gate. The passphrase stays enrolled as the fallback. One-time setup, at
+the laptop:
+
+1. Keys, then the signed boot chain (the rebuild signs with the keys, so
+   they come first; `sbctl` itself arrives with the rebuild):
+   `sudo nix run nixpkgs#sbctl -- create-keys`, then `rebuild`.
+   `sudo sbctl verify` should show `BOOTX64.EFI`, `systemd-bootx64.efi` and
+   `EFI/Linux/*.efi` signed. Leftover `EFI/nixos/*.efi` files from plain
+   systemd-boot are unsigned, and that's expected. Reboot once: the passphrase
+   prompt still appears, then the greeter.
+2. Setup mode (F2 → Administer Secure Boot): under PK, KEK and DB Options,
+   delete each entry one by one. **Not** "Erase all Secure Boot Settings": on
+   Frameworks it's buggy, and it drops the revocation list (dbx). F10.
+3. `sudo sbctl enroll-keys --microsoft --firmware-builtin` (Microsoft keys for
+   option ROMs, Framework's own keys for its firmware updates).
+4. F2 again: turn Secure Boot enforcement on, and set a **Supervisor
+   password** (Security tab) so nobody can turn Secure Boot off. It's asked
+   for only when entering setup, not at boot. F10. Check with
+   `bootctl status` (Secure Boot: enabled (user)).
+5. Seal the disk key to Secure Boot (PCR 7) and an empty PCR 15 (see the
+   comment in `hosts/framework/default.nix`), and make a recovery key; store
+   it in KeePass:
+   ```sh
+   sudo systemd-cryptenroll /dev/disk/by-partlabel/disk-main-luks --tpm2-device=auto \
+     --tpm2-pcrs=7+15:sha256=0000000000000000000000000000000000000000000000000000000000000000
+   sudo systemd-cryptenroll /dev/disk/by-partlabel/disk-main-luks --recovery-key
+   ```
+   Reboot: no prompt, straight to the greeter.
+
+If the passphrase prompt comes back (after a BIOS update or a Secure Boot key
+change, the TPM measurements differ), unlock with the passphrase and re-run the
+first command in step 5 with `--wipe-slot=tpm2` added.
 
 ## Passwords
 

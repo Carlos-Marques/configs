@@ -26,6 +26,12 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixos";
     };
+
+    # Secure Boot for NixOS. Pinned to a release tag, as upstream recommends.
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.2.0";
+      inputs.nixpkgs.follows = "nixos";
+    };
   };
 
   outputs =
@@ -37,6 +43,7 @@
       home-manager,
       nixos-hardware,
       disko,
+      lanzaboote,
       ...
     }:
     let
@@ -78,6 +85,7 @@
         modules = [
           ./hosts/framework
           disko.nixosModules.disko
+          lanzaboote.nixosModules.lanzaboote
           home-manager.nixosModules.home-manager
           (homeManager ./home/linux.nix)
         ];
