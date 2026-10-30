@@ -66,6 +66,16 @@ in
       "tpm2-device=auto"
       "tpm2-measure-pcr=yes"
     ];
+    # systemd-cryptsetup has systemd-pcrextend do that measurement, over its
+    # socket. nixpkgs puts the socket in the initrd but nothing starts it
+    # before the unlock, so the measurement failed ("Could not extend PCR: No
+    # such file or directory"), cryptsetup carried on, and PCR 15 stayed
+    # empty: the key stayed releasable after boot.
+    initrd.systemd.services."systemd-cryptsetup@cryptroot" = {
+      overrideStrategy = "asDropin";
+      wants = [ "systemd-pcrextend.socket" ];
+      after = [ "systemd-pcrextend.socket" ];
+    };
 
     # Newest kernel: Framework hardware support lands upstream continuously.
     kernelPackages = pkgs.linuxPackages_latest;
