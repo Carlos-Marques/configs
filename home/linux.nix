@@ -20,6 +20,15 @@ in
 
   programs.zsh.shellAliases.rebuild = "sudo nixos-rebuild switch --flake ~/configs";
 
+  # The M4 Mac, reached only at its NetBird address; see darwin.nix.
+  services.syncthing.settings = {
+    devices.m4-machine-broke = {
+      id = "LEDDOU4-6WTRH53-EYXATVE-JL2I63A-SLPSAQB-FQ5LENN-QEKXYDF-HTQT6QK";
+      addresses = [ "tcp://100.111.48.21:22000" ];
+    };
+    folders."~/vault".devices = [ "m4-machine-broke" ];
+  };
+
   wayland.windowManager.hyprland = {
     enable = true;
     # Both come from the NixOS module (programs.hyprland), and UWSM owns the

@@ -14,6 +14,17 @@
   # The syncthing launchd agent logs here but doesn't create the directory.
   home.file."Library/Logs/Syncthing/.keep".text = "";
 
+  # The Framework, reached only at its NetBird address (fixed per peer), never
+  # via discovery or relays. Not in default.nix's shared device list: there it
+  # would make the Framework list itself.
+  services.syncthing.settings = {
+    devices.framework-machine-broke = {
+      id = "QSODOYS-56YZAZK-PYUB2BH-EBSDTOB-5XMGGZ2-LUGXJJB-UOW23VN-FVLDMQS";
+      addresses = [ "tcp://100.111.220.154:22000" ];
+    };
+    folders."~/vault".devices = [ "framework-machine-broke" ];
+  };
+
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage
   # when a new Home Manager release introduces backwards

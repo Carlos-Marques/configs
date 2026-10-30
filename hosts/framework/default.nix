@@ -178,7 +178,11 @@ in
   networking.firewall = {
     enable = true;
     allowPing = false;
-    interfaces.wt0.allowedTCPPorts = [ 22022 ];
+    # NetBird SSH, and Syncthing with the M4 (home/linux.nix).
+    interfaces.wt0.allowedTCPPorts = [
+      22022
+      22000
+    ];
   };
 
   # Mutable users: set the password with `passwd` during the install rather
