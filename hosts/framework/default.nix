@@ -142,6 +142,12 @@ in
     hyprlock.enable = true;
   };
 
+  # xdg-open hands links to the desktop portal and returns at once. Without
+  # it, xdg-open runs the browser in the foreground when it isn't already
+  # open, so `netbird ssh` (which waits on xdg-open before listening for its
+  # login callback) hung and the login page got "connection refused".
+  xdg.portal.xdgOpenUsePortal = true;
+
   # No autologin: the TPM unlocks the disk without a prompt, so the greeter
   # (fingerprint or password) is what gates the machine.
   services.greetd = {
