@@ -68,12 +68,12 @@ in
         disable_splash_rendering = true;
       };
 
-      # KeePassXC at login with the vault and its key file filled in, so only
-      # the master password is typed; later unlocks take the fingerprint
-      # (Quick Unlock, hosts/framework/keepassxc.nix).
-      exec-once = [
-        "uwsm app -- keepassxc --keyfile ~/.config/keepassxc/vault.keyx ~/vault/vault.kdbx"
-      ];
+      # KeePassXC at login on the vault; it remembers the key file from the
+      # last unlock, so only the master password is typed. Later unlocks take
+      # the fingerprint (Quick Unlock, hosts/framework/keepassxc.nix). Not
+      # --keyfile: with it KeePassXC tries to unlock straight away with an
+      # empty password and fails.
+      exec-once = [ "uwsm app -- keepassxc ~/vault/vault.kdbx" ];
 
       # Same keys as AeroSpace in darwin.nix (Alt as the modifier); Super takes
       # the Mac's Cmd shortcuts.
