@@ -1,5 +1,5 @@
 # Home Manager config for the Mac only; shared settings are in default.nix.
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 {
   home.packages = with pkgs; [
@@ -10,6 +10,18 @@
     # Touch ID-gated KeePassXC reads for scripts and agents; pinned, see file.
     (callPackage ./pkgs/keepassxc-cli.nix { })
   ];
+
+  # SSH keys live in the KeePassXC vault (its SSH Agent integration), not as
+  # files in ~/.ssh. While the vault is unlocked KeePassXC loads them into this
+  # agent with the confirm constraint, and the agent asks for Touch ID before
+  # every use, like 1Password's agent. ~/.ssh/config's IdentityAgent and
+  # KeePassXC's SSHAgent/AuthSockOverride point at its socket,
+  # $(getconf DARWIN_USER_TEMP_DIR)/ssh-agent.
+  services.ssh-agent.enable = true;
+  launchd.agents.ssh-agent.config.EnvironmentVariables = {
+    SSH_ASKPASS = lib.getExe (pkgs.callPackage ./pkgs/ssh-askpass-touchid.nix { });
+    SSH_ASKPASS_REQUIRE = "force";
+  };
 
   # The syncthing launchd agent logs here but doesn't create the directory.
   home.file."Library/Logs/Syncthing/.keep".text = "";

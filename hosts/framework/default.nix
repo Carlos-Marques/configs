@@ -113,6 +113,25 @@ in
     (callPackage ./keepassxc.nix { })
     # Secure Boot keys and status (see boot.lanzaboote).
     sbctl
+    # The SSH agent's per-use check (home/linux.nix): authenticate as yourself
+    # every time, no grace period, so each key use takes a fingerprint.
+    (writeTextDir "share/polkit-1/actions/local.ssh-agent.policy" ''
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE policyconfig PUBLIC
+       "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+       "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+      <policyconfig>
+        <action id="local.ssh-agent.use-key">
+          <description>Use an SSH key from KeePassXC</description>
+          <message>Authentication is required to use your SSH key</message>
+          <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_self</allow_active>
+          </defaults>
+        </action>
+      </policyconfig>
+    '')
   ];
 
   # Chromium-family policy, same as the Mac's CustomUserPreferences: Brave reads

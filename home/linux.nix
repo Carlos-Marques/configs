@@ -20,6 +20,22 @@ in
 
   programs.zsh.shellAliases.rebuild = "sudo nixos-rebuild switch --flake ~/configs";
 
+  # SSH keys live in the KeePassXC vault; see darwin.nix. Here the agent's
+  # confirm-before-use check is a polkit authorization (action in
+  # hosts/framework), which hyprpolkitagent answers with the fingerprint.
+  # KeePassXC's SSHAgent/AuthSockOverride points at $XDG_RUNTIME_DIR/ssh-agent.
+  services.ssh-agent.enable = true;
+  systemd.user.services.ssh-agent.Service.Environment = [
+    "SSH_ASKPASS=${pkgs.writeShellScript "ssh-askpass-polkit" ''
+      # Exit 0 allows one use of the key. Only confirmations come here, never
+      # passphrase prompts.
+      [ "$SSH_ASKPASS_PROMPT" = confirm ] || exit 1
+      ${pkgs.polkit}/bin/pkcheck --action-id local.ssh-agent.use-key \
+        --process $$ --allow-user-interaction >/dev/null 2>&1
+    ''}"
+    "SSH_ASKPASS_REQUIRE=force"
+  ];
+
   # The M4 Mac, reached only at its NetBird address; see darwin.nix.
   services.syncthing.settings = {
     devices.m4-machine-broke = {
