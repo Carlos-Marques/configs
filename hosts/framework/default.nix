@@ -69,6 +69,9 @@ in
 
     # Newest kernel: Framework hardware support lands upstream continuously.
     kernelPackages = pkgs.linuxPackages_latest;
+    # Kernel errors (e.g. Framework's harmless "ucsi_acpi ... unknown error
+    # 256") would otherwise print over tuigreet on tty1.
+    consoleLogLevel = 3;
   };
 
   zramSwap.enable = true;
