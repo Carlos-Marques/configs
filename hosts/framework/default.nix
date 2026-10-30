@@ -136,16 +136,18 @@ in
     # redirects from 22 to 22022.
     clients.default.config.ServerSSHAllowed = true;
   };
-  networking.firewall.interfaces.wt0.allowedTCPPorts = [ 22022 ];
+  # No OpenSSH: NetBird SSH above is the only way in remotely.
+  services.openssh.enable = false;
 
-  # Key-only SSH; the password is for the console, sudo and the lock screen.
-  services.openssh = {
+  # Default-deny inbound. Outside the mesh the only opening is NetBird's
+  # WireGuard port (UDP 51820, from services.netbird's openFirewall). Traffic
+  # inside the mesh (wt0) is filtered by NetBird's own ACL chains, which run
+  # before these rules: access between peers is set by the NetBird
+  # dashboard's policies, not here.
+  networking.firewall = {
     enable = true;
-    settings = {
-      PasswordAuthentication = false;
-      KbdInteractiveAuthentication = false;
-      PermitRootLogin = "no";
-    };
+    allowPing = false;
+    interfaces.wt0.allowedTCPPorts = [ 22022 ];
   };
 
   # Mutable users: set the password with `passwd` during the install rather
@@ -158,10 +160,6 @@ in
       "video"
     ];
     shell = pkgs.zsh;
-    # Same key as github.com/Carlos-Marques.keys (held in 1Password).
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICcullPbqhb88CocW8eYZOG3WUtbRC7q14CED/3DUNO/"
-    ];
   };
 
   # Read the release notes before changing: it pins stateful defaults.
