@@ -147,10 +147,12 @@ in
   # the agents registered with it, and hyprpolkitagent doesn't re-register:
   # fingerprint prompts then fail with "No Polkit authentication agent was
   # available". Restart the agent along with polkit; at boot the user session
-  # isn't up yet and try-restart does nothing.
-  systemd.services.polkit.postStart = ''
-    ${pkgs.systemd}/bin/systemctl --user --machine=${user}@.host try-restart hyprpolkitagent.service || true
-  '';
+  # isn't up yet and try-restart does nothing. "+": polkit runs as polkituser,
+  # which can't reach the user manager, so this one command runs as root; "-":
+  # a failure here never fails polkit.
+  systemd.services.polkit.serviceConfig.ExecStartPost = [
+    "-+${pkgs.systemd}/bin/systemctl --user --machine=${user}@.host try-restart hyprpolkitagent.service"
+  ];
 
   # xdg-open hands links to the desktop portal and returns at once. Without
   # it, xdg-open runs the browser in the foreground when it isn't already
