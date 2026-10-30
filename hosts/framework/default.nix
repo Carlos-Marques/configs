@@ -143,6 +143,15 @@ in
     hyprlock.enable = true;
   };
 
+  # A polkit restart (e.g. a switch that adds a policy, like KeePassXC's) drops
+  # the agents registered with it, and hyprpolkitagent doesn't re-register:
+  # fingerprint prompts then fail with "No Polkit authentication agent was
+  # available". Restart the agent along with polkit; at boot the user session
+  # isn't up yet and try-restart does nothing.
+  systemd.services.polkit.postStart = ''
+    ${pkgs.systemd}/bin/systemctl --user --machine=${user}@.host try-restart hyprpolkitagent.service || true
+  '';
+
   # xdg-open hands links to the desktop portal and returns at once. Without
   # it, xdg-open runs the browser in the foreground when it isn't already
   # open, so `netbird ssh` (which waits on xdg-open before listening for its
