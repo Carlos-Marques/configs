@@ -1,5 +1,72 @@
+diff --git a/src/gui/DatabaseOpenDialog.cpp b/src/gui/DatabaseOpenDialog.cpp
+index e94e38b..b907849 100644
+--- a/src/gui/DatabaseOpenDialog.cpp
++++ b/src/gui/DatabaseOpenDialog.cpp
+@@ -81,6 +81,13 @@ void DatabaseOpenDialog::showEvent(QShowEvent* event)
+ 
+     GuiTools::centerWidgetOnActiveScreen(this);
+ 
++    // After a failed or cancelled quickUnlockWithoutWindow(), don't ask for
++    // the fingerprint again straight away: show the password form.
++    if (m_skipQuickUnlockOnShow) {
++        m_skipQuickUnlockOnShow = false;
++        return;
++    }
++
+     QTimer::singleShot(100, this, [this] {
+         if (m_view->isOnQuickUnlockScreen() && !m_view->unlockingDatabase()) {
+             m_view->triggerQuickUnlock();
+@@ -88,6 +95,28 @@ void DatabaseOpenDialog::showEvent(QShowEvent* event)
+     });
+ }
+ 
++/**
++ * Quick Unlock (the fingerprint prompt) without showing this dialog. The
++ * prompt blocks until answered; on success the dialog completes without ever
++ * appearing. Returns whether the target database is now unlocked.
++ */
++bool DatabaseOpenDialog::quickUnlockWithoutWindow()
++{
++    if (!m_view || !m_currentDbWidget || !m_view->canPerformQuickUnlock()) {
++        return false;
++    }
++    m_view->toggleQuickUnlockScreen();
++    if (!m_view->isOnQuickUnlockScreen() || m_view->unlockingDatabase()) {
++        return false;
++    }
++    m_view->triggerQuickUnlock();
++    if (m_currentDbWidget && !m_currentDbWidget->isLocked()) {
++        return true;
++    }
++    m_skipQuickUnlockOnShow = true;
++    return false;
++}
++
+ void DatabaseOpenDialog::selectTabOffset(int offset)
+ {
+     if (offset == 0 || m_tabBar->count() <= 1) {
+diff --git a/src/gui/DatabaseOpenDialog.h b/src/gui/DatabaseOpenDialog.h
+index ba6fcb4..ac122ce 100644
+--- a/src/gui/DatabaseOpenDialog.h
++++ b/src/gui/DatabaseOpenDialog.h
+@@ -53,6 +53,7 @@ public:
+     QSharedPointer<Database> database() const;
+     void clearForms();
+     void showMessage(const QString& text, MessageWidget::MessageType type, int autoHideTimeout);
++    bool quickUnlockWithoutWindow();
+ 
+ signals:
+     void dialogFinished(bool accepted, DatabaseWidget* dbWidget);
+@@ -70,6 +71,7 @@ private:
+     void selectTabOffset(int offset);
+ 
+     QPointer<DatabaseOpenWidget> m_view;
++    bool m_skipQuickUnlockOnShow = false;
+     QPointer<QTabBar> m_tabBar;
+     QSharedPointer<Database> m_db;
+     QList<QPointer<DatabaseWidget>> m_tabDbWidgets;
 diff --git a/src/gui/DatabaseOpenWidget.cpp b/src/gui/DatabaseOpenWidget.cpp
-index e6e8d24..94241b8 100644
+index e6e8d24..be3a76b 100644
 --- a/src/gui/DatabaseOpenWidget.cpp
 +++ b/src/gui/DatabaseOpenWidget.cpp
 @@ -32,6 +32,7 @@
@@ -10,14 +77,15 @@ index e6e8d24..94241b8 100644
  
  namespace
  {
-@@ -188,6 +189,16 @@ bool DatabaseOpenWidget::event(QEvent* event)
+@@ -188,6 +189,17 @@ bool DatabaseOpenWidget::event(QEvent* event)
          toggleQuickUnlockScreen();
  
          if (type == QEvent::Show) {
-+            // Start Quick Unlock (the fingerprint prompt) as soon as the unlock
-+            // screen appears, instead of waiting for its button. Once per show,
-+            // so cancelling the prompt doesn't loop.
-+            if (isOnQuickUnlockScreen()) {
++            // Start Quick Unlock (the fingerprint prompt) as soon as the main
++            // window's unlock screen appears, instead of waiting for its button.
++            // Once per show, so cancelling the prompt doesn't loop. The unlock
++            // dialog (DatabaseOpenDialog) handles its own.
++            if (isOnQuickUnlockScreen() && !window()->inherits("QDialog")) {
 +                QTimer::singleShot(0, this, [this] {
 +                    if (isOnQuickUnlockScreen() && !unlockingDatabase()) {
 +                        openDatabase();
@@ -27,7 +95,7 @@ index e6e8d24..94241b8 100644
  #ifdef Q_OS_WIN
              m_deviceListener->registerHotplugCallback(true,
                                                        true,
-@@ -322,7 +333,6 @@ void DatabaseOpenWidget::enterKey(const QString& pw, const QString& keyFile)
+@@ -322,7 +334,6 @@ void DatabaseOpenWidget::enterKey(const QString& pw, const QString& keyFile)
  
      m_ui->editPassword->setText(pw);
      m_ui->keyFileLineEdit->setText(keyFile);
@@ -35,3 +103,20 @@ index e6e8d24..94241b8 100644
      openDatabase();
  }
  
+diff --git a/src/gui/DatabaseTabWidget.cpp b/src/gui/DatabaseTabWidget.cpp
+index 64ba17a..ff9be3c 100644
+--- a/src/gui/DatabaseTabWidget.cpp
++++ b/src/gui/DatabaseTabWidget.cpp
+@@ -818,6 +818,12 @@ void DatabaseTabWidget::unlockDatabaseInDialogForSync(const QString& filePath)
+  */
+ void DatabaseTabWidget::displayUnlockDialog()
+ {
++    // With Quick Unlock available, only the fingerprint prompt appears; the
++    // dialog shows only if that fails or is cancelled.
++    if (m_databaseOpenDialog->quickUnlockWithoutWindow()) {
++        return;
++    }
++
+ #ifdef Q_OS_MACOS
+     auto intent = m_databaseOpenDialog->intent();
+     if (intent == DatabaseOpenDialog::Intent::AutoType || intent == DatabaseOpenDialog::Intent::Browser) {
