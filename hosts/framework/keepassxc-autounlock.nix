@@ -5,8 +5,8 @@
 #
 # - The master password is sealed with systemd-creds to this machine's TPM
 #   (PCR 7: Secure Boot with our keys) plus the host key, root-only. Seal it,
-#   or reseal after changing it or after a BIOS update changes PCR 7, by
-#   piping it into `sudo keepassxc-autounlock-seal`.
+#   or reseal after changing it or after a BIOS update changes PCR 7, with
+#   `sudo keepassxc-autounlock-seal` (it asks for the password).
 # - A session step in greetd's PAM stack (root, only after a successful
 #   login) starts keepassxc-autounlock.service. Nothing else starts it: users
 #   can't start system units.
@@ -36,11 +36,24 @@ let
       systemd
       pkgs.coreutils
     ];
+    # Asks for the password itself (hidden) rather than reading a pipe, so it
+    # never ends up in shell history, and only seals one that opens the vault.
     text = ''
-      # Reads the master password from stdin. Run as root.
+      if [ ! -t 0 ]; then
+        echo "Run it in a terminal: sudo keepassxc-autounlock-seal" >&2
+        exit 1
+      fi
+      read -rsp "KeePassXC master password: " pw
+      echo
+      if ! printf '%s\n' "$pw" | /run/current-system/sw/bin/keepassxc-cli ls -q \
+          -k ${home}/.config/keepassxc/vault.keyx ${home}/vault/vault.kdbx >/dev/null 2>&1; then
+        echo "That password doesn't open the vault; nothing sealed." >&2
+        exit 1
+      fi
       install -d -m 700 /var/lib/keepassxc-autounlock
-      systemd-creds encrypt --name=keepassxc-vault --with-key=tpm2+host --tpm2-pcrs=7 - ${credFile}
+      printf '%s' "$pw" | systemd-creds encrypt --name=keepassxc-vault --with-key=tpm2+host --tpm2-pcrs=7 - ${credFile}
       chmod 600 ${credFile}
+      echo "Sealed."
     '';
   };
 in

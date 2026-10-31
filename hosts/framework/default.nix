@@ -1,5 +1,6 @@
 # Framework Laptop 13 running NixOS + Hyprland. Install steps: README.md.
 {
+  config,
   pkgs,
   user,
   nixos-hardware,
@@ -72,6 +73,28 @@ in
     # before the unlock, so the measurement failed ("Could not extend PCR: No
     # such file or directory"), cryptsetup carried on, and PCR 15 stayed
     # empty: the key stayed releasable after boot.
+    # Second, independent close of PCR 15 on the way out of the initrd, after
+    # the unlock: whatever happened above, nothing booted later (e.g. a
+    # swapped-in root) can get the key released again. Fails open: a TPM that
+    # errors here can't release the key either.
+    initrd.systemd.services.close-pcr15 = {
+      description = "Extend PCR 15 before leaving the initrd";
+      wantedBy = [ "initrd.target" ];
+      after = [
+        "cryptsetup.target"
+        "tpm2.target"
+      ];
+      before = [
+        "initrd.target"
+        "initrd-switch-root.target"
+      ];
+      unitConfig.DefaultDependencies = false;
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${config.boot.initrd.systemd.package}/lib/systemd/systemd-pcrextend --graceful --pcr=15 leave-initrd";
+      };
+    };
     initrd.systemd.services."systemd-cryptsetup@cryptroot" = {
       overrideStrategy = "asDropin";
       wants = [ "systemd-pcrextend.socket" ];
