@@ -58,8 +58,9 @@ stdenv.mkDerivation (finalAttrs: {
   # - when something asks while the vault is locked (e.g. the browser
   #   extension), only the fingerprint prompt appears; the unlock dialog shows
   #   only if that fails or is cancelled;
-  # - the main window's unlock screen starts the fingerprint prompt by itself
-  #   instead of waiting for its "Unlock" button.
+  # - likewise a tray click (or anything that raises the main window) while
+  #   locked: only the fingerprint prompt, and KeePassXC stays in the tray;
+  #   the window shows only if that fails or is cancelled.
   patches = [ ./keepassxc-quick-unlock.patch ];
 
   cmakeFlags = [
