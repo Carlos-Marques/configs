@@ -1,13 +1,30 @@
+Local KeePassXC 2.8.0 changes for fingerprint Quick Unlock on this machine.
+
+1. DatabaseOpenWidget::enterKey: a command-line (--pw-stdin) or D-Bus unlock
+   stores Quick Unlock credentials like a typed one. Upstream skips that for
+   passwords not typed into the window; keepassxc-autounlock.nix unlocks at
+   login that way, so without this every later unlock asked for the master
+   password.
+2. Quick Unlock without a window: raising the main window (tray click,
+   starting keepassxc again) or a request through the unlock dialog (browser
+   extension, Auto-Type) while locked runs the fingerprint prompt first with
+   the window hidden; the window/dialog appears only if that fails or is
+   cancelled. Upstream always shows the window and then the prompt.
+3. Polkit::getKey: wait for the prompt's answer without blocking the GUI
+   (excluding user input), one prompt at a time, with a 5-minute D-Bus
+   timeout. Upstream blocks the GUI, so Hyprland offered to kill a "hung"
+   KeePassXC, and gave up on answers slower than D-Bus's default 25 s.
+
 diff --git a/src/gui/DatabaseOpenDialog.cpp b/src/gui/DatabaseOpenDialog.cpp
-index e94e38b..b907849 100644
+index e94e38b..88de406 100644
 --- a/src/gui/DatabaseOpenDialog.cpp
 +++ b/src/gui/DatabaseOpenDialog.cpp
 @@ -81,6 +81,13 @@ void DatabaseOpenDialog::showEvent(QShowEvent* event)
  
      GuiTools::centerWidgetOnActiveScreen(this);
  
-+    // After a failed or cancelled quickUnlockWithoutWindow(), don't ask for
-+    // the fingerprint again straight away: show the password form.
++    // After a failed or cancelled quickUnlockWithoutWindow(), show the
++    // password form instead of asking for the fingerprint again straight away.
 +    if (m_skipQuickUnlockOnShow) {
 +        m_skipQuickUnlockOnShow = false;
 +        return;
@@ -21,9 +38,9 @@ index e94e38b..b907849 100644
  }
  
 +/**
-+ * Quick Unlock (the fingerprint prompt) without showing this dialog. The
-+ * prompt blocks until answered; on success the dialog completes without ever
-+ * appearing. Returns whether the target database is now unlocked.
++ * Quick Unlock (the fingerprint prompt) without showing this dialog; on
++ * success the dialog completes without ever appearing. Returns whether the
++ * target database is now unlocked.
 + */
 +bool DatabaseOpenDialog::quickUnlockWithoutWindow()
 +{
@@ -66,38 +83,10 @@ index ba6fcb4..ac122ce 100644
      QSharedPointer<Database> m_db;
      QList<QPointer<DatabaseWidget>> m_tabDbWidgets;
 diff --git a/src/gui/DatabaseOpenWidget.cpp b/src/gui/DatabaseOpenWidget.cpp
-index e6e8d24..b6f636b 100644
+index e6e8d24..4251f3c 100644
 --- a/src/gui/DatabaseOpenWidget.cpp
 +++ b/src/gui/DatabaseOpenWidget.cpp
-@@ -32,6 +32,7 @@
- #include <QCloseEvent>
- #include <QDesktopServices>
- #include <QFont>
-+#include <QTimer>
- 
- namespace
- {
-@@ -188,6 +189,19 @@ bool DatabaseOpenWidget::event(QEvent* event)
-         toggleQuickUnlockScreen();
- 
-         if (type == QEvent::Show) {
-+            // Start Quick Unlock (the fingerprint prompt) as soon as the main
-+            // window's unlock screen appears, instead of waiting for its button.
-+            // Once per show, so cancelling the prompt doesn't loop. The unlock
-+            // dialog (DatabaseOpenDialog) handles its own.
-+            if (m_skipAutoQuickUnlock) {
-+                m_skipAutoQuickUnlock = false;
-+            } else if (isOnQuickUnlockScreen() && !window()->inherits("QDialog")) {
-+                QTimer::singleShot(0, this, [this] {
-+                    if (isOnQuickUnlockScreen() && !unlockingDatabase()) {
-+                        openDatabase();
-+                    }
-+                });
-+            }
- #ifdef Q_OS_WIN
-             m_deviceListener->registerHotplugCallback(true,
-                                                       true,
-@@ -322,7 +336,6 @@ void DatabaseOpenWidget::enterKey(const QString& pw, const QString& keyFile)
+@@ -322,7 +322,6 @@ void DatabaseOpenWidget::enterKey(const QString& pw, const QString& keyFile)
  
      m_ui->editPassword->setText(pw);
      m_ui->keyFileLineEdit->setText(keyFile);
@@ -105,38 +94,6 @@ index e6e8d24..b6f636b 100644
      openDatabase();
  }
  
-@@ -639,6 +652,11 @@ void DatabaseOpenWidget::toggleQuickUnlockScreen()
-     }
- }
- 
-+void DatabaseOpenWidget::skipAutoQuickUnlockOnce()
-+{
-+    m_skipAutoQuickUnlock = true;
-+}
-+
- void DatabaseOpenWidget::triggerQuickUnlock()
- {
-     if (isOnQuickUnlockScreen()) {
-diff --git a/src/gui/DatabaseOpenWidget.h b/src/gui/DatabaseOpenWidget.h
-index c0287fd..be082a3 100644
---- a/src/gui/DatabaseOpenWidget.h
-+++ b/src/gui/DatabaseOpenWidget.h
-@@ -56,6 +56,7 @@ public:
-     bool isOnQuickUnlockScreen() const;
-     void toggleQuickUnlockScreen();
-     void triggerQuickUnlock();
-+    void skipAutoQuickUnlockOnce();
-     void resetQuickUnlock();
- 
- signals:
-@@ -88,6 +89,7 @@ private:
-     bool m_pollingHardwareKey = false;
-     bool m_manualHardwareKeyRefresh = false;
-     bool m_blockQuickUnlock = false;
-+    bool m_skipAutoQuickUnlock = false;
-     bool m_unlockingDatabase = false;
-     bool m_triedToQuit = false;
-     QTimer m_hideTimer;
 diff --git a/src/gui/DatabaseTabWidget.cpp b/src/gui/DatabaseTabWidget.cpp
 index 64ba17a..ff9be3c 100644
 --- a/src/gui/DatabaseTabWidget.cpp
@@ -155,17 +112,16 @@ index 64ba17a..ff9be3c 100644
      auto intent = m_databaseOpenDialog->intent();
      if (intent == DatabaseOpenDialog::Intent::AutoType || intent == DatabaseOpenDialog::Intent::Browser) {
 diff --git a/src/gui/DatabaseWidget.cpp b/src/gui/DatabaseWidget.cpp
-index 2f5c6c7..91bebc5 100644
+index 2f5c6c7..d7c35fe 100644
 --- a/src/gui/DatabaseWidget.cpp
 +++ b/src/gui/DatabaseWidget.cpp
-@@ -291,6 +291,28 @@ DatabaseWidget::Mode DatabaseWidget::currentMode() const
+@@ -291,6 +291,23 @@ DatabaseWidget::Mode DatabaseWidget::currentMode() const
      return mode;
  }
  
 +/**
-+ * Quick Unlock (the fingerprint prompt) while the window stays hidden. The
-+ * prompt blocks until answered. Returns whether the database is now unlocked;
-+ * if not, the next show of the unlock screen won't ask for it again.
++ * Quick Unlock (the fingerprint prompt) while the window stays hidden.
++ * Returns whether the database is now unlocked.
 + */
 +bool DatabaseWidget::quickUnlockWithoutWindow()
 +{
@@ -177,11 +133,7 @@ index 2f5c6c7..91bebc5 100644
 +        return false;
 +    }
 +    m_databaseOpenWidget->triggerQuickUnlock();
-+    if (!isLocked()) {
-+        return true;
-+    }
-+    m_databaseOpenWidget->skipAutoQuickUnlockOnce();
-+    return false;
++    return !isLocked();
 +}
 +
  bool DatabaseWidget::isLocked() const
@@ -200,7 +152,7 @@ index 82a261e..9cf5243 100644
      bool isSorted() const;
      bool isSearchActive() const;
 diff --git a/src/gui/MainWindow.cpp b/src/gui/MainWindow.cpp
-index 8c93c7c..caf4e43 100644
+index 8c93c7c..f57f6e9 100644
 --- a/src/gui/MainWindow.cpp
 +++ b/src/gui/MainWindow.cpp
 @@ -1865,6 +1865,16 @@ void MainWindow::hideYubiKeyPopup()
@@ -208,8 +160,8 @@ index 8c93c7c..caf4e43 100644
  void MainWindow::bringToFront()
  {
 +    // Locked with Quick Unlock available (e.g. a tray click): only the
-+    // fingerprint prompt appears and KeePassXC stays in the tray; the window
-+    // shows only if that fails or is cancelled.
++    // fingerprint prompt appears and KeePassXC stays hidden; the window shows
++    // only if that fails or is cancelled.
 +    if (!isVisible()) {
 +        auto* dbWidget = m_ui->tabWidget->currentDatabaseWidget();
 +        if (dbWidget && dbWidget->quickUnlockWithoutWindow()) {
@@ -221,7 +173,7 @@ index 8c93c7c..caf4e43 100644
      ensurePolished();
      setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
 diff --git a/src/quickunlock/Polkit.cpp b/src/quickunlock/Polkit.cpp
-index d73a7c7..1d38d10 100644
+index d73a7c7..c4c6be5 100644
 --- a/src/quickunlock/Polkit.cpp
 +++ b/src/quickunlock/Polkit.cpp
 @@ -23,6 +23,8 @@
@@ -233,12 +185,22 @@ index d73a7c7..1d38d10 100644
  #include <QFile>
  #include <QtDBus>
  #include <botan/mem_ops.h>
-@@ -150,6 +152,16 @@ bool Polkit::getKey(const QUuid& dbUuid, QByteArray& key)
+@@ -73,6 +75,9 @@ Polkit::Polkit()
+     }
+ 
+     m_polkit.reset(new org::freedesktop::PolicyKit1::Authority(polkit_service, polkit_object, bus));
++    // CheckAuthorization waits for the user to answer the prompt; D-Bus's
++    // default 25 s timeout made KeePassXC give up on a slower answer.
++    m_polkit->setTimeout(5 * 60 * 1000);
+ }
+ 
+ Polkit::~Polkit()
+@@ -150,6 +155,16 @@ bool Polkit::getKey(const QUuid& dbUuid, QByteArray& key)
          return false;
      }
  
-+    // One prompt at a time: the event loop runs while waiting (below), so a
-+    // second request could otherwise start a second prompt.
++    // One prompt at a time: events keep being processed while waiting
++    // (below), so a D-Bus request could otherwise start a second one.
 +    static bool waiting = false;
 +    if (waiting) {
 +        m_error = QObject::tr("Already waiting for authentication");
@@ -250,18 +212,18 @@ index d73a7c7..1d38d10 100644
      PolkitSubject subject;
      subject.kind = "unix-process";
      subject.details.insert("pid", static_cast<uint>(QCoreApplication::applicationPid()));
-@@ -166,6 +178,16 @@ bool Polkit::getKey(const QUuid& dbUuid, QByteArray& key)
+@@ -166,6 +181,16 @@ bool Polkit::getKey(const QUuid& dbUuid, QByteArray& key)
          // https://www.freedesktop.org/software/polkit/docs/0.105/eggdbus-interface-org.freedesktop.PolicyKit1.Authority.html#eggdbus-enum-CheckAuthorizationFlags
          "");
  
-+    // Wait for the answer with the event loop running, so windows stay
-+    // responsive while the user answers the prompt. Blocking here froze the
-+    // GUI, and compositors such as Hyprland offer to kill a frozen app.
++    // Wait with events still processed, so windows keep answering the
++    // compositor (a GUI blocked here looks hung, and Hyprland offers to kill
++    // it), but without user input, so nothing can be clicked mid-unlock.
 +    if (!result.isFinished()) {
 +        QDBusPendingCallWatcher watcher(result);
 +        QEventLoop loop;
 +        QObject::connect(&watcher, &QDBusPendingCallWatcher::finished, &loop, &QEventLoop::quit);
-+        loop.exec();
++        loop.exec(QEventLoop::ExcludeUserInputEvents);
 +    }
 +
      // A general error occurred

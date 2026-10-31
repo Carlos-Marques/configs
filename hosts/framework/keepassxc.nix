@@ -50,19 +50,9 @@ stdenv.mkDerivation (finalAttrs: {
       --replace-fail "typedef uint32_t RETVAL;" "typedef int32_t RETVAL;"
   '';
 
-  # Quick Unlock without clicks:
-  # - an unlock from the command line (--pw-stdin, which
-  #   keepassxc-autounlock.nix uses at login) stores Quick Unlock credentials
-  #   like any other unlock, so later unlocks take the fingerprint, not the
-  #   master password;
-  # - when something asks while the vault is locked (e.g. the browser
-  #   extension), only the fingerprint prompt appears; the unlock dialog shows
-  #   only if that fails or is cancelled;
-  # - likewise a tray click (or anything that raises the main window) while
-  #   locked: only the fingerprint prompt, and KeePassXC stays in the tray;
-  #   the window shows only if that fails or is cancelled;
-  # - KeePassXC stays responsive while the prompt waits (upstream blocks its
-  #   GUI, and Hyprland offers to kill an app it sees frozen).
+  # Fingerprint Quick Unlock as used here: unlocked at login without the master
+  # password, and later only the fingerprint prompt, no window, no hang. The
+  # patch's header explains each change; recheck them on every version bump.
   patches = [ ./keepassxc-quick-unlock.patch ];
 
   cmakeFlags = [
