@@ -23,6 +23,7 @@ in
     nixos-hardware.nixosModules.${mainboard}
     ./hardware-configuration.nix
     ./disko.nix
+    ./keepassxc-autounlock.nix
   ];
 
   networking.hostName = "framework-machine-broke";
