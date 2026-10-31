@@ -220,3 +220,50 @@ index 8c93c7c..caf4e43 100644
      m_minimizedToSystemTray = false;
      ensurePolished();
      setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+diff --git a/src/quickunlock/Polkit.cpp b/src/quickunlock/Polkit.cpp
+index d73a7c7..1d38d10 100644
+--- a/src/quickunlock/Polkit.cpp
++++ b/src/quickunlock/Polkit.cpp
+@@ -23,6 +23,8 @@
+ #include "gui/osutils/nixutils/NixUtils.h"
+ 
+ #include <QDebug>
++#include <QEventLoop>
++#include <QScopeGuard>
+ #include <QFile>
+ #include <QtDBus>
+ #include <botan/mem_ops.h>
+@@ -150,6 +152,16 @@ bool Polkit::getKey(const QUuid& dbUuid, QByteArray& key)
+         return false;
+     }
+ 
++    // One prompt at a time: the event loop runs while waiting (below), so a
++    // second request could otherwise start a second prompt.
++    static bool waiting = false;
++    if (waiting) {
++        m_error = QObject::tr("Already waiting for authentication");
++        return false;
++    }
++    waiting = true;
++    auto stopWaiting = qScopeGuard([] { waiting = false; });
++
+     PolkitSubject subject;
+     subject.kind = "unix-process";
+     subject.details.insert("pid", static_cast<uint>(QCoreApplication::applicationPid()));
+@@ -166,6 +178,16 @@ bool Polkit::getKey(const QUuid& dbUuid, QByteArray& key)
+         // https://www.freedesktop.org/software/polkit/docs/0.105/eggdbus-interface-org.freedesktop.PolicyKit1.Authority.html#eggdbus-enum-CheckAuthorizationFlags
+         "");
+ 
++    // Wait for the answer with the event loop running, so windows stay
++    // responsive while the user answers the prompt. Blocking here froze the
++    // GUI, and compositors such as Hyprland offer to kill a frozen app.
++    if (!result.isFinished()) {
++        QDBusPendingCallWatcher watcher(result);
++        QEventLoop loop;
++        QObject::connect(&watcher, &QDBusPendingCallWatcher::finished, &loop, &QEventLoop::quit);
++        loop.exec();
++    }
++
+     // A general error occurred
+     if (result.isError()) {
+         auto msg = result.error().message();

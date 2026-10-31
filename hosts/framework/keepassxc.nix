@@ -60,7 +60,9 @@ stdenv.mkDerivation (finalAttrs: {
   #   only if that fails or is cancelled;
   # - likewise a tray click (or anything that raises the main window) while
   #   locked: only the fingerprint prompt, and KeePassXC stays in the tray;
-  #   the window shows only if that fails or is cancelled.
+  #   the window shows only if that fails or is cancelled;
+  # - KeePassXC stays responsive while the prompt waits (upstream blocks its
+  #   GUI, and Hyprland offers to kill an app it sees frozen).
   patches = [ ./keepassxc-quick-unlock.patch ];
 
   cmakeFlags = [
