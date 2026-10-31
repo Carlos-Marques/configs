@@ -12,6 +12,8 @@ let
   ];
 in
 {
+  imports = [ ./pi.nix ];
+
   # Per-user nix.conf. The private cachix cache needs the netrc below, and as a
   # trusted user these settings are forwarded to the daemon, so they live here
   # rather than in the system config.

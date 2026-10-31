@@ -16,6 +16,7 @@ and a Framework laptop ([NixOS](https://nixos.org)), with
 | `hosts/framework/` | Framework system: hardware, disk layout (disko), Hyprland session |
 | `home/default.nix` | User config shared by both: packages, shell, editor, git, Syncthing |
 | `home/darwin.nix`, `home/linux.nix` | Per-platform user config (Hyprland keybinds mirror AeroSpace) |
+| `home/pi.nix` | Pi coding agent on the Claude subscription via Claude Code (see Pi) |
 | `templates/default` | Flake template for new projects |
 
 ## Apply
@@ -157,6 +158,25 @@ Conflicts: if both sides edit while offline, Syncthing leaves a
 ```sh
 keepassxc-cli merge -k ~/.config/keepassxc/vault.keyx ~/vault/vault.kdbx ~/vault/vault.sync-conflict-*.kdbx
 ```
+
+## Pi
+
+[Pi](https://pi.dev) uses the Claude Pro/Max subscription only through the
+official Claude Code CLI: the
+[pi-claude-code](https://github.com/earendil-works/pi-claude-code) extension
+sends Pi's model calls to `claude -p`, and Pi runs the tools. Claude Code is
+the Homebrew cask on the Mac and nixpkgs' `claude-code` on the Framework.
+
+- Log in with `claude auth login` only. Never Pi's `/login anthropic`
+  (third-party OAuth, billed per token); a rebuild removes such a login.
+- The `pi` (and Framework `claude`) wrappers unset API-key, proxy and
+  Bedrock/Vertex/Foundry overrides, and `PI_CLAUDE_CODE_ALLOW_USAGE_CREDITS`,
+  so a turn that would be charged to extra usage fails instead. Keep extra
+  usage off at claude.ai/settings/usage too.
+- Pi clones the pinned extension into `~/.pi/agent/git` on first start.
+- Check: `claude` → `/status` says "Login method: Claude Pro/Max account";
+  in `pi`, `/claude-code-status`, then `/model` → "Claude Code Subscription
+  (Experimental)".
 
 ## New project
 
