@@ -1,0 +1,37 @@
+diff --git a/src/gui/DatabaseOpenWidget.cpp b/src/gui/DatabaseOpenWidget.cpp
+index e6e8d24..94241b8 100644
+--- a/src/gui/DatabaseOpenWidget.cpp
++++ b/src/gui/DatabaseOpenWidget.cpp
+@@ -32,6 +32,7 @@
+ #include <QCloseEvent>
+ #include <QDesktopServices>
+ #include <QFont>
++#include <QTimer>
+ 
+ namespace
+ {
+@@ -188,6 +189,16 @@ bool DatabaseOpenWidget::event(QEvent* event)
+         toggleQuickUnlockScreen();
+ 
+         if (type == QEvent::Show) {
++            // Start Quick Unlock (the fingerprint prompt) as soon as the unlock
++            // screen appears, instead of waiting for its button. Once per show,
++            // so cancelling the prompt doesn't loop.
++            if (isOnQuickUnlockScreen()) {
++                QTimer::singleShot(0, this, [this] {
++                    if (isOnQuickUnlockScreen() && !unlockingDatabase()) {
++                        openDatabase();
++                    }
++                });
++            }
+ #ifdef Q_OS_WIN
+             m_deviceListener->registerHotplugCallback(true,
+                                                       true,
+@@ -322,7 +333,6 @@ void DatabaseOpenWidget::enterKey(const QString& pw, const QString& keyFile)
+ 
+     m_ui->editPassword->setText(pw);
+     m_ui->keyFileLineEdit->setText(keyFile);
+-    m_blockQuickUnlock = true;
+     openDatabase();
+ }
+ 
