@@ -180,6 +180,11 @@ in
   # login callback) hung and the login page got "connection refused".
   xdg.portal.xdgOpenUsePortal = true;
 
+  # dconf holds the dark-mode setting the portal hands to apps
+  # (home/linux.nix). Already on through Hyprland's module; stated because
+  # home-manager's dconf.settings needs it.
+  programs.dconf.enable = true;
+
   # No autologin: the TPM unlocks the disk without a prompt, so the greeter
   # (fingerprint or password) is what gates the machine.
   services.greetd = {

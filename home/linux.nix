@@ -36,6 +36,31 @@ in
     "SSH_ASKPASS_REQUIRE=force"
   ];
 
+  # Dark mode. Apps ask the desktop portal (org.freedesktop.appearance
+  # color-scheme), which xdg-desktop-portal-gtk answers from dconf's
+  # org.gnome.desktop.interface color-scheme; Hyprland's portal has no
+  # Settings. Brave (and web pages' prefers-color-scheme), GTK 4, libadwaita,
+  # Ghostty and KeePassXC follow it, live. gtk3.colorScheme sets that key
+  # and GTK 3's settings.ini, since GTK 3 (file picker, Waybar's tray menus)
+  # never reads the portal. Not GTK 4's settings.ini: libadwaita warns at
+  # every start when that says prefer-dark.
+  gtk = {
+    enable = true;
+    gtk3.colorScheme = "dark";
+    # GTK 3's file picker draws its icons from Adwaita, which nothing else
+    # installs here.
+    iconTheme = {
+      name = "Adwaita";
+      package = pkgs.adwaita-icon-theme;
+    };
+  };
+  # Other Qt apps take GTK 3's dark colors (and font, and file dialog).
+  # KeePassXC's default "Automatic" theme reads the portal itself.
+  qt = {
+    enable = true;
+    platformTheme.name = "gtk3";
+  };
+
   # The M4 Mac, reached only at its NetBird address; see darwin.nix.
   services.syncthing.settings = {
     devices.m4-machine-broke = {
