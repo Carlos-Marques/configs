@@ -45,9 +45,16 @@ stdenv.mkDerivation (finalAttrs: {
 
   # As in nixpkgs: upstream builds against Xcode's PCSC, whose types don't
   # match pcsclite's.
+  #
+  # And: an unlock from the command line (--pw-stdin, which
+  # keepassxc-autounlock.nix uses at login) normally doesn't store Quick Unlock
+  # credentials, so the first lock after login asked for the master password.
+  # Store them as after any other unlock (released only by the fingerprint).
   postPatch = ''
     substituteInPlace src/keys/drivers/YubiKeyInterfacePCSC.cpp \
       --replace-fail "typedef uint32_t RETVAL;" "typedef int32_t RETVAL;"
+    substituteInPlace src/gui/DatabaseOpenWidget.cpp \
+      --replace-fail "m_blockQuickUnlock = true;" ""
   '';
 
   cmakeFlags = [
