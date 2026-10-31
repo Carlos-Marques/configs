@@ -70,9 +70,17 @@ in
       pkgs.coreutils
       pkgs.gnugrep
     ];
+    # 255: systemd-run --pipe when KeePassXC is killed at logout.
+    serviceConfig.SuccessExitStatus = "255";
     script = ''
       um() { systemctl --machine=${user}@.host --user "$@"; }
-      run() { systemd-run --machine=${user}@.host --user --unit=keepassxc --collect --quiet "$@"; }
+      # ExecStopPost empties the SSH agent whenever KeePassXC stops: killed at
+      # logout or crashing, it can't remove its keys itself.
+      sock=/run/user/$(id -u ${user})/ssh-agent
+      run() {
+        systemd-run --machine=${user}@.host --user --unit=keepassxc --collect --quiet \
+          --setenv=SSH_AUTH_SOCK="$sock" --property=ExecStopPost="${pkgs.openssh}/bin/ssh-add -D" "$@"
+      }
 
       # Wait for the graphical session and its tray (Waybar), so KeePassXC can
       # start hidden there.
