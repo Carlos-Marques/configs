@@ -55,9 +55,11 @@ stdenv.mkDerivation (finalAttrs: {
   #   keepassxc-autounlock.nix uses at login) stores Quick Unlock credentials
   #   like any other unlock, so later unlocks take the fingerprint, not the
   #   master password;
-  # - when the unlock screen appears (e.g. the browser extension asks while
-  #   the vault is locked), the fingerprint prompt starts right away instead
-  #   of waiting for the "Unlock" button.
+  # - when something asks while the vault is locked (e.g. the browser
+  #   extension), only the fingerprint prompt appears; the unlock dialog shows
+  #   only if that fails or is cancelled;
+  # - the main window's unlock screen starts the fingerprint prompt by itself
+  #   instead of waiting for its "Unlock" button.
   patches = [ ./keepassxc-quick-unlock.patch ];
 
   cmakeFlags = [
