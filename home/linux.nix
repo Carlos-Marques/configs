@@ -1,6 +1,6 @@
 # Home Manager config for NixOS machines (Hyprland); shared settings are in
 # default.nix.
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   terminal = "uwsm app -- ghostty";
@@ -48,119 +48,209 @@ in
   wayland.windowManager.hyprland = {
     enable = true;
     # Both come from the NixOS module (programs.hyprland), and UWSM owns the
-    # systemd session, so home-manager only writes hyprland.conf.
+    # systemd session, so home-manager only writes hyprland.lua.
     package = null;
     portalPackage = null;
     systemd.enable = false;
-    # Hyprland 0.56 reads either hyprland.lua (the default for stateVersion
-    # 26.05) or the classic hyprland.conf. These settings use the classic
-    # syntax; the Lua API is a different shape (hl.bind("SUPER + Q", ...)).
-    configType = "hyprlang";
+    # Lua config: Hyprland 0.56 warns at every start that the .conf format is
+    # removed in 0.57. Each attribute below becomes an hl.<name>(...) call;
+    # `_args` gives multi-argument calls (hl.bind(keys, dispatcher, opts)).
+    # API: https://wiki.hypr.land and the example hyprland.lua upstream.
+    configType = "lua";
 
-    # https://wiki.hypr.land/Configuring/Variables/
-    settings = {
-      monitor = ",preferred,auto,auto";
+    settings =
+      let
+        lua = lib.generators.mkLuaInline;
+        str = lib.generators.toLua { };
+        exec = cmd: lua "hl.dsp.exec_cmd(${str cmd})";
+        focus = arg: lua "hl.dsp.focus(${str arg})";
+        move = arg: lua "hl.dsp.window.move(${str arg})";
+        bind = keys: dispatcher: {
+          _args = [
+            keys
+            dispatcher
+          ];
+        };
+        bindWith = opts: keys: dispatcher: {
+          _args = [
+            keys
+            dispatcher
+            opts
+          ];
+        };
+        directions = {
+          h = "left";
+          j = "down";
+          k = "up";
+          l = "right";
+        };
+        workspaces = [
+          "1"
+          "2"
+          "3"
+          "4"
+          "Q"
+          "W"
+          "E"
+          "R"
+        ];
+        # Numbered workspaces by number, lettered ones by name.
+        workspace = ws: if builtins.match "[0-9]+" ws != null then lib.toInt ws else "name:${ws}";
+      in
+      {
+        monitor = {
+          output = "";
+          mode = "preferred";
+          position = "auto";
+          scale = "auto";
+        };
 
-      input = {
-        kb_layout = "us";
-        # Mac-like trackpad: natural scrolling, tap to click.
-        touchpad = {
-          natural_scroll = true;
-          tap-to-click = true;
+        config = {
+          input = {
+            kb_layout = "us";
+            # Mac-like trackpad: natural scrolling, tap to click.
+            touchpad = {
+              natural_scroll = true;
+              tap_to_click = true;
+            };
+          };
+
+          general = {
+            gaps_in = 4;
+            gaps_out = 8;
+            layout = "dwindle";
+          };
+
+          misc = {
+            disable_hyprland_logo = true;
+            disable_splash_rendering = true;
+          };
+        };
+
+        # Three-finger swipe between workspaces.
+        gesture = {
+          fingers = 3;
+          direction = "horizontal";
+          action = "workspace";
+        };
+
+        # No exec-once for KeePassXC: hosts/framework/keepassxc-autounlock.nix
+        # starts it, already unlocked, after each login.
+
+        # Same keys as AeroSpace in darwin.nix (Alt as the modifier); Super
+        # takes the Mac's Cmd shortcuts.
+        bind =
+          lib.mapAttrsToList (
+            key: dir:
+            bind "ALT + ${key}" (focus {
+              direction = dir;
+            })
+          ) directions
+          ++ lib.mapAttrsToList (
+            key: dir:
+            bind "ALT + SHIFT + ${key}" (move {
+              direction = dir;
+            })
+          ) directions
+          ++ [
+            (bind "ALT + f" (lua "hl.dsp.window.fullscreen()"))
+            # AeroSpace's accordion / tiles toggles: tab the window into a
+            # group, or flip the split direction.
+            (bind "ALT + s" (lua "hl.dsp.group.toggle()"))
+            (bind "ALT + t" (lua ''hl.dsp.layout("togglesplit")''))
+          ]
+          ++ map (
+            ws:
+            bind "ALT + ${lib.toLower ws}" (focus {
+              workspace = workspace ws;
+            })
+          ) workspaces
+          ++ map (
+            ws:
+            bind "ALT + SHIFT + ${lib.toLower ws}" (move {
+              workspace = workspace ws;
+            })
+          ) workspaces
+          ++ [
+            (bind "ALT + period" (focus {
+              monitor = "+1";
+            }))
+            (bind "ALT + comma" (focus {
+              monitor = "-1";
+            }))
+
+            (bind "SUPER + Return" (exec terminal))
+            (bind "SUPER + space" (exec "fuzzel"))
+            (bind "SUPER + q" (lua "hl.dsp.window.close()"))
+            # ⌃⌘Q / ⇧⌘4 / ⇧⌘3 on the Mac.
+            (bind "SUPER + CTRL + q" (exec "loginctl lock-session"))
+            (bind "SUPER + SHIFT + 4" (exec ''grim -g "$(slurp)" - | wl-copy''))
+            (bind "SUPER + SHIFT + 3" (exec "grim - | wl-copy"))
+            (bind "SUPER + SHIFT + Escape" (exec "uwsm stop"))
+
+            # Drag with Alt held: left button moves, right button resizes.
+            (bindWith { mouse = true; } "ALT + mouse:272" (lua "hl.dsp.window.drag()"))
+            (bindWith { mouse = true; } "ALT + mouse:273" (lua "hl.dsp.window.resize()"))
+          ]
+          # Media and brightness keys work on the lock screen; volume and
+          # brightness repeat while held.
+          ++
+            map
+              (
+                b:
+                bindWith {
+                  locked = true;
+                  repeating = true;
+                } b.key (exec b.cmd)
+              )
+              [
+                {
+                  key = "XF86AudioRaiseVolume";
+                  cmd = "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+";
+                }
+                {
+                  key = "XF86AudioLowerVolume";
+                  cmd = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+                }
+                {
+                  key = "XF86MonBrightnessUp";
+                  cmd = "brightnessctl set 5%+";
+                }
+                {
+                  key = "XF86MonBrightnessDown";
+                  cmd = "brightnessctl set 5%-";
+                }
+              ]
+          ++ map (b: bindWith { locked = true; } b.key (exec b.cmd)) [
+            {
+              key = "XF86AudioMute";
+              cmd = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+            }
+            {
+              key = "XF86AudioMicMute";
+              cmd = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+            }
+            {
+              key = "XF86AudioPlay";
+              cmd = "playerctl play-pause";
+            }
+            {
+              key = "XF86AudioNext";
+              cmd = "playerctl next";
+            }
+            {
+              key = "XF86AudioPrev";
+              cmd = "playerctl previous";
+            }
+          ];
+
+        # KeePassXC's unlock / access dialogs float, as on the Mac.
+        window_rule = {
+          name = "keepassxc-float";
+          match.class = "^(org.keepassxc.KeePassXC)$";
+          float = true;
         };
       };
-
-      general = {
-        gaps_in = 4;
-        gaps_out = 8;
-        layout = "dwindle";
-      };
-
-      # Three-finger swipe between workspaces.
-      gesture = "3, horizontal, workspace";
-
-      misc = {
-        disable_hyprland_logo = true;
-        disable_splash_rendering = true;
-      };
-
-      # No exec-once for KeePassXC: hosts/framework/keepassxc-autounlock.nix
-      # starts it, already unlocked, after each login.
-
-      # Same keys as AeroSpace in darwin.nix (Alt as the modifier); Super takes
-      # the Mac's Cmd shortcuts.
-      bind = [
-        "ALT, h, movefocus, l"
-        "ALT, j, movefocus, d"
-        "ALT, k, movefocus, u"
-        "ALT, l, movefocus, r"
-
-        "ALT SHIFT, h, movewindow, l"
-        "ALT SHIFT, j, movewindow, d"
-        "ALT SHIFT, k, movewindow, u"
-        "ALT SHIFT, l, movewindow, r"
-
-        "ALT, f, fullscreen"
-        # AeroSpace's accordion / tiles toggles: tab the window into a group,
-        # or flip the split direction.
-        "ALT, s, togglegroup"
-        "ALT, t, layoutmsg, togglesplit"
-
-        "ALT, 1, workspace, 1"
-        "ALT, 2, workspace, 2"
-        "ALT, 3, workspace, 3"
-        "ALT, 4, workspace, 4"
-        "ALT SHIFT, 1, movetoworkspace, 1"
-        "ALT SHIFT, 2, movetoworkspace, 2"
-        "ALT SHIFT, 3, movetoworkspace, 3"
-        "ALT SHIFT, 4, movetoworkspace, 4"
-
-        "ALT, q, workspace, name:Q"
-        "ALT, w, workspace, name:W"
-        "ALT, e, workspace, name:E"
-        "ALT, r, workspace, name:R"
-        "ALT SHIFT, q, movetoworkspace, name:Q"
-        "ALT SHIFT, w, movetoworkspace, name:W"
-        "ALT SHIFT, e, movetoworkspace, name:E"
-        "ALT SHIFT, r, movetoworkspace, name:R"
-
-        "ALT, period, focusmonitor, +1"
-        "ALT, comma, focusmonitor, -1"
-
-        "SUPER, Return, exec, ${terminal}"
-        "SUPER, space, exec, fuzzel"
-        "SUPER, q, killactive"
-        # ⌃⌘Q / ⇧⌘4 / ⇧⌘3 on the Mac.
-        "SUPER CTRL, q, exec, loginctl lock-session"
-        ''SUPER SHIFT, 4, exec, grim -g "$(slurp)" - | wl-copy''
-        "SUPER SHIFT, 3, exec, grim - | wl-copy"
-        "SUPER SHIFT, Escape, exec, uwsm stop"
-      ];
-
-      # Drag with Alt held: left button moves, right button resizes.
-      bindm = [
-        "ALT, mouse:272, movewindow"
-        "ALT, mouse:273, resizewindow"
-      ];
-
-      # Media and brightness keys; repeat while held, work on the lock screen.
-      bindel = [
-        ", XF86AudioRaiseVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"
-        ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
-        ", XF86MonBrightnessUp, exec, brightnessctl set 5%+"
-        ", XF86MonBrightnessDown, exec, brightnessctl set 5%-"
-      ];
-      bindl = [
-        ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-        ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
-        ", XF86AudioPlay, exec, playerctl play-pause"
-        ", XF86AudioNext, exec, playerctl next"
-        ", XF86AudioPrev, exec, playerctl previous"
-      ];
-
-      # KeePassXC's unlock / access dialogs float, as on the Mac.
-      windowrule = [ "match:class ^(org.keepassxc.KeePassXC)$, float on" ];
-    };
   };
 
   programs = {
