@@ -4,11 +4,17 @@
 
 let
   terminal = "uwsm app -- ghostty";
+  # NetBird's CLI with its SSO logins in a hidden, self-closing window; see
+  # the file. Shadows the system one on PATH (same version, it wraps it).
+  netbird = pkgs.callPackage ./pkgs/netbird-login-window.nix {
+    netbird = "/run/current-system/sw/bin/netbird";
+  };
   lock = "pidof hyprlock || hyprlock";
 in
 {
   home.packages = with pkgs; [
     brightnessctl
+    netbird
     grim
     playerctl
     slurp
@@ -69,7 +75,7 @@ in
     Service = {
       Type = "oneshot";
       ExecStart = lib.getExe (
-        pkgs.callPackage ./pkgs/netbird-renew.nix { netbird = "/run/current-system/sw/bin/netbird"; }
+        pkgs.callPackage ./pkgs/netbird-renew.nix { netbird = lib.getExe netbird; }
       );
     };
   };
@@ -290,12 +296,22 @@ in
             }
           ];
 
-        # KeePassXC's unlock / access dialogs float, as on the Mac.
-        window_rule = {
-          name = "keepassxc-float";
-          match.class = "^(org.keepassxc.KeePassXC)$";
-          float = true;
-        };
+        window_rule = [
+          # KeePassXC's unlock / access dialogs float, as on the Mac.
+          {
+            name = "keepassxc-float";
+            match.class = "^(org.keepassxc.KeePassXC)$";
+            float = true;
+          }
+          # NetBird's login windows open hidden, without focus
+          # (pkgs/netbird-login-window.nix). Patterns match the whole class.
+          {
+            name = "netbird-login-hidden";
+            match.class = "brave-login\\.netbird\\.io__.*";
+            workspace = "special:netbird-login silent";
+            no_initial_focus = true;
+          }
+        ];
       };
   };
 
