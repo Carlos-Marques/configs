@@ -77,7 +77,8 @@ let
         [ "$title" != "NetBird Login" ] || exit 0
         if [ "$i" -eq 30 ]; then
           # Line-buffered, so the id is in the file while it still waits.
-          stdbuf -oL notify-send --app-name=NetBird --print-id --wait \
+          # No timeout: it stays until clicked or until this exits.
+          stdbuf -oL notify-send --app-name=NetBird --expire-time=0 --print-id --wait \
             --action=default="Sign in" "NetBird needs you to sign in" \
             "Click to open the login window." >"$notice" &
           notifier=$!

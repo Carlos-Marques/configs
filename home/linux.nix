@@ -296,6 +296,23 @@ in
             }
           ];
 
+        # Do Not Disturb (mako, below) while anything captures the screen:
+        # sharing a screen, window or region in a call, or recording. Each
+        # capture reports its start and its stop, and several can overlap.
+        on._args = [
+          "screenshare.state"
+          (lua ''
+            function(capturing)
+              local before = screen_captures or 0
+              screen_captures = math.max(0, before + (capturing and 1 or -1))
+              if before == 0 and screen_captures > 0 then
+                hl.exec_cmd("${lib.getExe' pkgs.mako "makoctl"} mode -a do-not-disturb")
+              elseif screen_captures == 0 then
+                hl.exec_cmd("${lib.getExe' pkgs.mako "makoctl"} mode -r do-not-disturb")
+              end
+            end'')
+        ];
+
         window_rule = [
           # KeePassXC's unlock / access dialogs float, as on the Mac.
           {
@@ -368,7 +385,19 @@ in
   };
 
   services = {
-    mako.enable = true;
+    mako = {
+      enable = true;
+      settings = {
+        # Notifications that don't set their own timeout (e.g. Claude Code's,
+        # through Ghostty) close after 10 s instead of staying until clicked.
+        # They stay in the history (makoctl restore).
+        default-timeout = 10000;
+        # Do Not Disturb: notifications are held, hidden, and show once the
+        # mode ends. Hyprland turns it on while the screen is captured (see
+        # screenshare.state below).
+        "mode=do-not-disturb".invisible = 1;
+      };
+    };
     cliphist.enable = true;
     hyprpolkitagent.enable = true;
 
