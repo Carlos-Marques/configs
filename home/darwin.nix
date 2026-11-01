@@ -23,6 +23,19 @@
     SSH_ASKPASS_REQUIRE = "force";
   };
 
+  # Keeps the NetBird login from expiring; see the file. launchd runs a missed
+  # interval on wake.
+  launchd.agents.netbird-renew = {
+    enable = true;
+    config = {
+      ProgramArguments = [
+        (lib.getExe (pkgs.callPackage ./pkgs/netbird-renew.nix { netbird = "/opt/homebrew/bin/netbird"; }))
+      ];
+      RunAtLoad = true;
+      StartInterval = 3600;
+    };
+  };
+
   # The syncthing launchd agent logs here but doesn't create the directory.
   home.file."Library/Logs/Syncthing/.keep".text = "";
 

@@ -61,6 +61,27 @@ in
     platformTheme.name = "gtk3";
   };
 
+  # Keeps the NetBird login from expiring; see the file. Only in the graphical
+  # session, where the login can open the browser. OnCalendar timers also fire
+  # on resume when an hour passed in sleep; OnActiveSec checks right at login.
+  systemd.user.services.netbird-renew = {
+    Unit.Description = "Renew the NetBird login from the browser's";
+    Service = {
+      Type = "oneshot";
+      ExecStart = lib.getExe (
+        pkgs.callPackage ./pkgs/netbird-renew.nix { netbird = "/run/current-system/sw/bin/netbird"; }
+      );
+    };
+  };
+  systemd.user.timers.netbird-renew = {
+    Unit.PartOf = [ "graphical-session.target" ];
+    Timer = {
+      OnActiveSec = "30s";
+      OnCalendar = "hourly";
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
   # The M4 Mac, reached only at its NetBird address; see darwin.nix.
   services.syncthing.settings = {
     devices.m4-machine-broke = {
