@@ -10,6 +10,8 @@ let
     netbird = "/run/current-system/sw/bin/netbird";
   };
   lock = "pidof hyprlock || hyprlock";
+  # Screen on/off. hyprctl dispatch takes Lua since the config moved to Lua.
+  dpms = action: "hyprctl dispatch 'hl.dsp.dpms({ action = \"${action}\" })'";
 in
 {
   home.packages = with pkgs; [
@@ -407,7 +409,7 @@ in
         general = {
           lock_cmd = lock;
           before_sleep_cmd = "loginctl lock-session";
-          after_sleep_cmd = "hyprctl dispatch dpms on";
+          after_sleep_cmd = dpms "on";
         };
         listener = [
           {
@@ -416,8 +418,8 @@ in
           }
           {
             timeout = 330;
-            on-timeout = "hyprctl dispatch dpms off";
-            on-resume = "hyprctl dispatch dpms on";
+            on-timeout = dpms "off";
+            on-resume = dpms "on";
           }
           {
             timeout = 1800;

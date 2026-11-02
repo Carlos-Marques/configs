@@ -208,6 +208,14 @@ in
   # home-manager's dconf.settings needs it.
   programs.dconf.enable = true;
 
+  # The power button (also the fingerprint reader) locks the screen, like the
+  # Mac's Touch ID button, instead of shutting down. Held (logind counts 5 s)
+  # it shuts down cleanly; held on, the firmware forces the power off.
+  services.logind.settings.Login = {
+    HandlePowerKey = "lock";
+    HandlePowerKeyLongPress = "poweroff";
+  };
+
   # No autologin: the TPM unlocks the disk without a prompt, so the greeter
   # (fingerprint or password) is what gates the machine.
   services.greetd = {
