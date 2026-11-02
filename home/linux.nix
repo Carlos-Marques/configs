@@ -335,6 +335,11 @@ in
   };
 
   programs = {
+    # Ghostty's Linux default makes Ctrl+Enter fullscreen, which kept the key
+    # from reaching programs in the terminal (Claude Code). Hyprland's
+    # fullscreen (Alt+F) covers it.
+    ghostty.settings.keybind = [ "ctrl+enter=unbind" ];
+
     fuzzel = {
       enable = true;
       # Launched apps run as their own systemd units under UWSM.
