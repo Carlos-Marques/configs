@@ -233,7 +233,17 @@ in
     # NetBird's own SSH server (Google login per session), so SSH is only
     # reachable through the mesh. Peers connect with plain `ssh`, which NetBird
     # redirects from 22 to 22022.
-    clients.default.config.ServerSSHAllowed = true;
+    clients.default.config = {
+      ServerSSHAllowed = true;
+      # Reuse an SSH login's token for 5 minutes instead of a new login per
+      # connection. The daemon keeps it in memory for the user who got it, so
+      # anything running as that user can open SSH sessions to peers in that
+      # time, which the hidden logins (home/linux.nix) already let it do as
+      # long as the browser is signed in. Not longer: peers refuse tokens over
+      # 10 minutes old, and the client doesn't fall back to a new login.
+      # Applies when the daemon restarts.
+      SSHJWTCacheTTL = 300;
+    };
   };
   # The NetBird client writes its `ssh` integration (99-netbird.conf: mesh
   # peers go through `netbird ssh proxy`, with its login) into

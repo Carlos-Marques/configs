@@ -72,6 +72,15 @@ in
   # Hyprland, its apps and the renewal below) the second.
   home.sessionVariables.BROWSER = browser;
   systemd.user.sessionVariables.BROWSER = browser;
+  # And again in every zsh, unconditionally: the first is read only once per
+  # process tree (__HM_SESS_VARS_SOURCED is inherited), so a shell under a
+  # process that read an older copy (a terminal or Claude Code running since
+  # before a switch) went without it and opened logins in a visible tab. This
+  # also covers plain `ssh` from such processes: ssh runs NetBird's
+  # ProxyCommand through zsh.
+  programs.zsh.envExtra = ''
+    export BROWSER=${browser}
+  '';
 
   # Keeps the NetBird login from expiring; see the file. Only in the graphical
   # session, where the login can open the browser. OnCalendar timers also fire
