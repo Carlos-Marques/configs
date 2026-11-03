@@ -17,6 +17,11 @@
       keep-derivations = true;
       keep-outputs = true;
       sandbox = true;
+      # De-duplicate each file as it enters the store, instead of a weekly
+      # `nix-store --optimise` that walks the whole store: on this one (117k
+      # paths) that ran for days in disk wait and stalled every build behind
+      # it. Safe on Nix >= 2.32.5; nix-darwin asserts the version.
+      auto-optimise-store = true;
       trusted-users = [
         "root"
         "@admin"
@@ -32,7 +37,6 @@
       };
       options = "--delete-older-than 14d";
     };
-    optimise.automatic = true;
 
     linux-builder = {
       enable = true;
