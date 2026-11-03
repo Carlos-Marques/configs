@@ -60,8 +60,10 @@ let
 
       before=$(logins)
       # Its own scope, so a Brave that wasn't running yet outlives this unit.
-      uwsm app -- brave --app="$url"
-      for _ in $(seq 1 40); do
+      # In the background: when it does start Brave, it runs as long as Brave.
+      uwsm app -- brave --app="$url" &
+      # Up to 20 s: Brave starting from scratch takes a while.
+      for _ in $(seq 1 80); do
         win=$(logins | jq -r --argjson old "$before" '. - $old | .[0] // empty')
         [ -n "$win" ] && break
         sleep 0.25
