@@ -235,6 +235,13 @@ in
     # redirects from 22 to 22022.
     clients.default.config.ServerSSHAllowed = true;
   };
+  # The NetBird client writes its `ssh` integration (99-netbird.conf: mesh
+  # peers go through `netbird ssh proxy`, with its login) into
+  # /etc/ssh/ssh_config.d, which NixOS's ssh_config doesn't include. Without
+  # it, plain `ssh` to the M4 skips the NetBird login and the server hangs up.
+  programs.ssh.extraConfig = ''
+    Include /etc/ssh/ssh_config.d/*.conf
+  '';
   # No OpenSSH: NetBird SSH above is the only way in remotely.
   services.openssh.enable = false;
 
