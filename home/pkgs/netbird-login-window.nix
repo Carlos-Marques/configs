@@ -1,7 +1,8 @@
-# NetBird's SSO logins (`netbird up`, `netbird login --extend`, `netbird ssh`)
-# in a Brave window of their own that opens hidden and closes when done,
-# instead of a tab in the current Brave window that takes focus. NetBird opens
-# logins with $BROWSER when it's set; the `netbird` wrapper below sets it.
+# NetBird's SSO logins (`netbird up`, `netbird login --extend`, `netbird ssh`,
+# plain `ssh` to a peer) in a Brave window of their own that opens hidden and
+# closes when done, instead of a tab in the current Brave window that takes
+# focus. NetBird opens logins with $BROWSER when it's set; home/linux.nix sets
+# it to this for the whole session, and every other link goes on to xdg-open.
 #
 # The window is an app window (`brave --app`): same profile, so the existing
 # sign-in completes the login, with its own class, which home/linux.nix's
@@ -13,11 +14,8 @@
 # Unclicked, the window closes when NetBird stops waiting (5 min).
 {
   writeShellApplication,
-  writeShellScriptBin,
   jq,
   libnotify,
-  # The real CLI, matching the running daemon.
-  netbird,
 }:
 
 let
@@ -97,20 +95,18 @@ let
     '';
   };
 
-  browser = writeShellApplication {
-    name = "netbird-browser";
-    text = ''
-      case $1 in
-        https://login.netbird.io/*) ;;
-        *) exec xdg-open "$1" ;;
-      esac
-      # Detached into its own unit: NetBird, or the renewal's unit, can exit
-      # as soon as the login completes, which would take this along before
-      # it closes the window.
-      exec systemd-run --user --quiet --collect -- ${window}/bin/netbird-login-window "$1"
-    '';
-  };
 in
-writeShellScriptBin "netbird" ''
-  BROWSER=${browser}/bin/netbird-browser exec ${netbird} "$@"
-''
+writeShellApplication {
+  name = "netbird-browser";
+  text = ''
+    case $1 in
+      https://login.netbird.io/*) ;;
+      # Without BROWSER, so xdg-open can't hand it back here.
+      *) exec env -u BROWSER xdg-open "$1" ;;
+    esac
+    # Detached into its own unit: NetBird, or the renewal's unit, can exit
+    # as soon as the login completes, which would take this along before
+    # it closes the window.
+    exec systemd-run --user --quiet --collect -- ${window}/bin/netbird-login-window "$1"
+  '';
+}

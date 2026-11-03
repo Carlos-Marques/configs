@@ -4,11 +4,9 @@
 
 let
   terminal = "uwsm app -- ghostty";
-  # NetBird's CLI with its SSO logins in a hidden, self-closing window; see
-  # the file. Shadows the system one on PATH (same version, it wraps it).
-  netbird = pkgs.callPackage ./pkgs/netbird-login-window.nix {
-    netbird = "/run/current-system/sw/bin/netbird";
-  };
+  # $BROWSER: NetBird's SSO logins in a hidden, self-closing window, every
+  # other link to the default browser as before; see the file.
+  browser = lib.getExe (pkgs.callPackage ./pkgs/netbird-login-window.nix { });
   lock = "pidof hyprlock || hyprlock";
   # Screen on/off. hyprctl dispatch takes Lua since the config moved to Lua.
   dpms = action: "hyprctl dispatch 'hl.dsp.dpms({ action = \"${action}\" })'";
@@ -16,7 +14,6 @@ in
 {
   home.packages = with pkgs; [
     brightnessctl
-    netbird
     grim
     playerctl
     slurp
@@ -69,6 +66,13 @@ in
     platformTheme.name = "gtk3";
   };
 
+  # For everything in the session, so NetBird's logins use it however NetBird
+  # was started (a shell, plain `ssh` through NetBird's ssh config, a user
+  # service): shells read the first, the systemd user manager (and so
+  # Hyprland, its apps and the renewal below) the second.
+  home.sessionVariables.BROWSER = browser;
+  systemd.user.sessionVariables.BROWSER = browser;
+
   # Keeps the NetBird login from expiring; see the file. Only in the graphical
   # session, where the login can open the browser. OnCalendar timers also fire
   # on resume when an hour passed in sleep; OnActiveSec checks right at login.
@@ -77,7 +81,7 @@ in
     Service = {
       Type = "oneshot";
       ExecStart = lib.getExe (
-        pkgs.callPackage ./pkgs/netbird-renew.nix { netbird = lib.getExe netbird; }
+        pkgs.callPackage ./pkgs/netbird-renew.nix { netbird = "/run/current-system/sw/bin/netbird"; }
       );
     };
   };
