@@ -100,7 +100,37 @@ in
       id = "LEDDOU4-6WTRH53-EYXATVE-JL2I63A-SLPSAQB-FQ5LENN-QEKXYDF-HTQT6QK";
       addresses = [ "tcp://100.111.48.21:22000" ];
     };
-    folders."~/vault".devices = [ "m4-machine-broke" ];
+    folders =
+      let
+        # A one-way mirror of the Mac: changes there arrive here, nothing
+        # here goes back, and files deleted on the Mac stay (ignoreDelete), so
+        # the Mac can be cleaned up without losing the copy. A file the Mac
+        # overwrites keeps its old version in .stversions for 30 days. Copy
+        # out of ~/m4-mac to reorganize: edits inside it show as local changes
+        # Syncthing can revert.
+        mirror = {
+          type = "receiveonly";
+          devices = lib.mkForce [ "m4-machine-broke" ];
+          ignoreDelete = true;
+          versioning = {
+            type = "trashcan";
+            params.cleanoutDays = "30";
+          };
+        };
+      in
+      {
+        "~/vault".devices = [ "m4-machine-broke" ];
+        # The Mac's whole home folder (ignore list in darwin.nix).
+        "~/m4-mac/home" = mirror // {
+          id = "m4-home";
+          label = "m4-home";
+        };
+        # org: the shared folder (default.nix) as a mirror of the Mac's copy;
+        # the Mac keeps syncing it both ways with the phone.
+        "~/org" = mirror // {
+          path = lib.mkForce "~/m4-mac/org";
+        };
+      };
   };
 
   wayland.windowManager.hyprland = {

@@ -1,5 +1,10 @@
 # Home Manager config for the Mac only; shared settings are in default.nix.
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   home.packages = with pkgs; [
@@ -47,7 +52,36 @@
       id = "QSODOYS-56YZAZK-PYUB2BH-EBSDTOB-5XMGGZ2-LUGXJJB-UOW23VN-FVLDMQS";
       addresses = [ "tcp://100.111.220.154:22000" ];
     };
-    folders."~/vault".devices = [ "framework-machine-broke" ];
+    folders = {
+      "~/vault".devices = [ "framework-machine-broke" ];
+
+      # The Framework mirrors org and this whole home folder, receive-only
+      # (home/linux.nix): this Mac only sends.
+      "~/org".devices = [ "framework-machine-broke" ];
+      ${config.home.homeDirectory} = {
+        id = "m4-home";
+        label = "m4-home";
+        type = "sendonly";
+        devices = [ "framework-machine-broke" ];
+        # Machine state, not data. org and vault sync as their own folders;
+        # Syncthing's own state would sync itself forever; Docker's VM disk
+        # changes constantly (a copy is corrupt) and Docker rebuilds it;
+        # my-nix is a Nix store. Mail and Messages: not wanted, and macOS
+        # doesn't let Syncthing read them anyway.
+        ignorePatterns = [
+          "/org"
+          "/vault"
+          "/.cache"
+          "/Library/Caches"
+          "/Library/Application Support/Syncthing"
+          "/Library/Logs/Syncthing"
+          "/Library/Containers/com.docker.docker"
+          "/my-nix"
+          "/Library/Mail"
+          "/Library/Messages"
+        ];
+      };
+    };
   };
 
   # This value determines the Home Manager release that your
