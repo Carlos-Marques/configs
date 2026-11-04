@@ -129,6 +129,7 @@ in
       in
       {
         "~/vault".devices = [ "m4-machine-broke" ];
+        "~/.config/keepassxc".devices = [ "m4-machine-broke" ];
         # The Mac's whole home folder (ignore list in darwin.nix).
         "~/m4-mac/home" = mirror // {
           id = "m4-home";

@@ -54,6 +54,7 @@
     };
     folders = {
       "~/vault".devices = [ "framework-machine-broke" ];
+      "~/.config/keepassxc".devices = [ "framework-machine-broke" ];
 
       # The Framework mirrors org and this whole home folder, receive-only
       # (home/linux.nix): this Mac only sends.
@@ -63,7 +64,8 @@
         label = "m4-home";
         type = "sendonly";
         devices = [ "framework-machine-broke" ];
-        # Machine state, not data. org and vault sync as their own folders;
+        # Machine state, not data. org, vault and the vault's key file sync as
+        # their own folders;
         # Syncthing's own state would sync itself forever; Docker's VM disk
         # changes constantly (a copy is corrupt) and Docker rebuilds it;
         # my-nix is a Nix store. Mail and Messages: not wanted, and macOS
@@ -71,6 +73,7 @@
         ignorePatterns = [
           "/org"
           "/vault"
+          "/.config/keepassxc"
           "/.cache"
           "/Library/Caches"
           "/Library/Application Support/Syncthing"

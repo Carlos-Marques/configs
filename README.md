@@ -75,9 +75,10 @@ Update inputs with `nix flake update`. Format with `nix fmt`.
    so without it the only way back in is booting the USB stick, opening LUKS,
    mounting the `/root` and `/nix` subvolumes and running the same command.
    Delete `/tmp/secret.key`, reboot.
-8. After the first login: `fprintd-enroll` for the fingerprint reader, copy
-   the KeePassXC key file over (see Passwords), and accept the new device in
-   Syncthing on another peer, then add its ID to `home/default.nix`.
+8. After the first login: `fprintd-enroll` for the fingerprint reader, and
+   accept the new device in Syncthing on another peer, then add its ID to
+   `home/default.nix`; the vault and its key file then arrive by Syncthing
+   (see Passwords).
 
 Hyprland uses the same keys as AeroSpace on the Mac, with Alt as the modifier.
 Super takes the Mac's Cmd shortcuts: Super+Return terminal, Super+Space
@@ -132,7 +133,7 @@ device. No server.
 | Piece | Where | Managed by |
 |---|---|---|
 | Database | `~/vault/vault.kdbx` (Syncthing folder `vault`, staggered versioning) | `home.nix` |
-| Key file | `~/.config/keepassxc/vault.keyx` — **never inside a synced folder**; copy to each device out of band | you |
+| Key file | `~/.config/keepassxc/vault.keyx` — needed with the master password. Syncthing folder `keepassxc-key` (only that file; deletions never propagate), so a new device only needs NetBird + Syncthing (chosen 2026-11-03; KeePassXC's FAQ would distribute it out of band instead). Must never change | `home.nix` |
 | macOS app | KeePassXC cask (signed build: required for Touch ID quick unlock) | `darwin.nix` |
 | Brave | KeePassXC-Browser, force-installed by policy | `darwin.nix` |
 | CLI | `keepassxc-cli` (master password; `merge`), symlinked to `/opt/homebrew/bin` by the cask | `darwin.nix` |

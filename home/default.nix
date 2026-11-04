@@ -89,6 +89,31 @@ in
               };
             };
           };
+
+          # The vault's key file, so a device that joins Syncthing can open the
+          # vault (README.md, Passwords). Only vault.keyx: on Linux this folder
+          # also holds KeePassXC's settings. Losing it locks the vault for good,
+          # so a deletion on one device never reaches the others, and an
+          # overwritten copy stays in .stversions. Permissions aren't synced
+          # (0400 here, the Mac's own elsewhere).
+          "~/.config/keepassxc" = {
+            id = "keepassxc-key";
+            label = "keepassxc key file";
+            devices = peers;
+            ignoreDelete = true;
+            ignorePerms = true;
+            ignorePatterns = [
+              "!/vault.keyx"
+              "*"
+            ];
+            versioning = {
+              type = "staggered";
+              params = {
+                cleanInterval = "3600";
+                maxAge = "31536000";
+              };
+            };
+          };
         };
       };
     };
