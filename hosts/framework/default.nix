@@ -24,6 +24,7 @@ in
     nixos-hardware.nixosModules.${mainboard}
     ./hardware-configuration.nix
     ./disko.nix
+    ./dns.nix
     ./keepassxc-autounlock.nix
   ];
 
