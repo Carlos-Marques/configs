@@ -56,8 +56,8 @@
       "~/vault".devices = [ "framework-machine-broke" ];
       "~/.config/keepassxc".devices = [ "framework-machine-broke" ];
 
-      # The Framework mirrors org and this whole home folder, receive-only
-      # (home/linux.nix): this Mac only sends.
+      # org syncs both ways with the Framework too; the Framework mirrors this
+      # whole home folder receive-only (home/linux.nix): this Mac only sends.
       "~/org".devices = [ "framework-machine-broke" ];
       ${config.home.homeDirectory} = {
         id = "m4-home";

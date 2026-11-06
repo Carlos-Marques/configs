@@ -67,10 +67,17 @@ in
         };
 
         folders = {
+          # Notes, both ways between every device. Syncthing's trashcan keeps
+          # what another device deleted or overwrote (90 days), so a deletion
+          # made on one machine survives on the others.
           "~/org" = {
             id = "org";
             label = "org";
             devices = peers;
+            versioning = {
+              type = "trashcan";
+              params.cleanoutDays = "90";
+            };
           };
 
           # KeePassXC database (see README.md). Every client rewrites the whole

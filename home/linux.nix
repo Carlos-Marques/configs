@@ -16,6 +16,8 @@ in
     brightnessctl
     grim
     playerctl
+    # Google Drive from the command line: list, move, upload, check.
+    rclone
     slurp
     wl-clipboard
   ];
@@ -135,11 +137,9 @@ in
           id = "m4-home";
           label = "m4-home";
         };
-        # org: the shared folder (default.nix) as a mirror of the Mac's copy;
-        # the Mac keeps syncing it both ways with the phone.
-        "~/org" = mirror // {
-          path = lib.mkForce "~/m4-mac/org";
-        };
+        # org: the shared notes folder (default.nix), here also with the Mac
+        # until it is wiped.
+        "~/org".devices = [ "m4-machine-broke" ];
       };
   };
 
